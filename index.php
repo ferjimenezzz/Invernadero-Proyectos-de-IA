@@ -185,7 +185,7 @@ require_once __DIR__ . '/includes/header.php';
                 <div class="flex items-start gap-2 pt-1">
                     <input type="checkbox" id="terms" required checked class="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300">
                     <label for="terms" class="text-[11px] text-slate-600 leading-tight">
-                        Acepto los <a href="#" class="text-emerald-700 font-semibold underline">Términos del Servicio</a> y la política de privacidad.
+                        Acepto los <a href="javascript:void(0)" onclick="alert('Términos del Servicio AgroPulse:\n- Acceso restringido a personal agronómico autorizado.\n- Telemetría encriptada bajo TLS 1.3 / mTLS.\n- Auditoría continua de conformidad ISO-22000.');" class="text-emerald-700 font-semibold underline">Términos del Servicio</a> y la política de privacidad.
                     </label>
                 </div>
 
