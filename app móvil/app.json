@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "Invernadero Inteligente",
+    "slug": "invernadero-app",
+    "version": "1.0.0",
+    "orientation": "default",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F7F9F8",
+    "android": { "adaptiveIcon": { "backgroundColor": "#0F5A45" } }
+  }
+}
