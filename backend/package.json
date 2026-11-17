@@ -1,0 +1,31 @@
+{
+  "name": "invernadero-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BD y backend del invernadero de albahaca: suscriptor MQTT, adaptador REST para las apps y scripts de Supabase",
+  "type": "module",
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "suscriptor": "node src/suscriptor.js",
+    "api": "node src/api/servidor.js",
+    "broker": "node scripts/broker.js",
+    "simular": "node scripts/simular.js",
+    "test": "node --test \"test/*.test.js\"",
+    "test:integracion": "node --test --test-concurrency=1 \"test/integracion/*.test.js\"",
+    "test:bd": "node scripts/psql.js --pruebas",
+    "respaldo": "node scripts/respaldo.js",
+    "usuarios": "node scripts/usuarios.js",
+    "diccionario": "node scripts/diccionario.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.118.0",
+    "express": "5.3.0",
+    "mqtt": "5.16.1"
+  },
+  "devDependencies": {
+    "aedes": "1.2.0"
+  }
+}
