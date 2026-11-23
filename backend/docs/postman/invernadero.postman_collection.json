@@ -1,0 +1,2089 @@
+{
+  "info": {
+    "name": "Invernadero - Backend",
+    "description": "Adaptador REST (puerto 3000) y PostgREST de Supabase. Variables: api, supabase_url, anon_key, token. No guardar valores secretos en la colección: definirlos en un Environment local. Ver backend/docs/API.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "api",
+      "value": "http://localhost:3000",
+      "description": "Adaptador Express"
+    },
+    {
+      "key": "supabase_url",
+      "value": "",
+      "description": "https://<ref>.supabase.co (sin valor en el repo)"
+    },
+    {
+      "key": "anon_key",
+      "value": "",
+      "description": "Llave anon/publishable (definir en el Environment local)"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "description": "access_token del usuario. Definir en el Environment local"
+    }
+  ],
+  "item": [
+    {
+      "name": "App móvil",
+      "item": [
+        {
+          "name": "Ping",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api}}/",
+              "host": [
+                "{{api}}"
+              ],
+              "path": []
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"eq-app@invernadero.test\",\n  \"password\": \"<contraseña de la cuenta>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api}}/auth/login",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mediciones actuales",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "url": {
+              "raw": "{{api}}/mediciones/actual",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "mediciones",
+                "actual"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Histórico",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "url": {
+              "raw": "{{api}}/mediciones/historico?variable=temperatura&rango=1h",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "mediciones",
+                "historico"
+              ],
+              "query": [
+                {
+                  "key": "variable",
+                  "value": "temperatura"
+                },
+                {
+                  "key": "rango",
+                  "value": "1h"
+                }
+              ]
+            },
+            "description": "variable: temperatura|humedad|luz; rango: 1h|6h|24h|7d"
+          }
+        },
+        {
+          "name": "Dispositivos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "url": {
+              "raw": "{{api}}/dispositivos",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "dispositivos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Detalle de dispositivo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "url": {
+              "raw": "{{api}}/dispositivos/SENS-SOIL-01/detalle",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "dispositivos",
+                "SENS-SOIL-01",
+                "detalle"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Calibrar (solicitud)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "url": {
+              "raw": "{{api}}/dispositivos/SENS-SOIL-01/calibrar",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "dispositivos",
+                "SENS-SOIL-01",
+                "calibrar"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cambiar umbrales",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"min\": 35,\n  \"max\": 75\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api}}/umbrales/SENS-SOIL-01",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "umbrales",
+                "SENS-SOIL-01"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actuadores",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "url": {
+              "raw": "{{api}}/actuadores",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "actuadores"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actuador: encender",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"encendido\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api}}/actuadores/bomba_riego",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "actuadores",
+                "bomba_riego"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actuador: PWM",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pwm\": 50\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api}}/actuadores/bomba_riego",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "actuadores",
+                "bomba_riego"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actuador: nivel",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nivel\": \"low\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api}}/actuadores/bomba_riego",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "actuadores",
+                "bomba_riego"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Riego manual",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api}}/actuadores/riego-manual",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "actuadores",
+                "riego-manual"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Paro general",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "url": {
+              "raw": "{{api}}/actuadores/detener-todo",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "actuadores",
+                "detener-todo"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alertas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "url": {
+              "raw": "{{api}}/alertas",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "alertas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actividades",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "url": {
+              "raw": "{{api}}/actividades",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "actividades"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Nueva actividad",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"riego\",\n  \"bedId\": \"c1\",\n  \"date\": \"2026-11-22T16:00:00.000Z\",\n  \"responsible\": {\n    \"initials\": \"AB\",\n    \"name\": \"Ana Base\",\n    \"role\": \"Operadora\"\n  },\n  \"description\": \"Riego de prueba del cantero 1\",\n  \"observations\": \"\",\n  \"photos\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api}}/actividades",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "actividades"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Invernadero actual",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "url": {
+              "raw": "{{api}}/invernaderos/actual",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "invernaderos",
+                "actual"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Estado de la red",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "url": {
+              "raw": "{{api}}/red/estado",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "red",
+                "estado"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Web /api/v1",
+      "item": [
+        {
+          "name": "Telemetría en vivo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "url": {
+              "raw": "{{api}}/api/v1/telemetry/live",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "telemetry",
+                "live"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Comando: START",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actuator_code\": \"bomba_riego\",\n  \"action\": \"START\",\n  \"parameters\": {\n    \"duration_minutes\": 1\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api}}/api/v1/actuators/command",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "actuators",
+                "command"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Comando: SET_POWER",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actuator_code\": \"bomba_riego\",\n  \"action\": \"SET_POWER\",\n  \"parameters\": {\n    \"power_pct\": 60\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api}}/api/v1/actuators/command",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "actuators",
+                "command"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Comando: SET_SPEED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actuator_code\": \"bomba_riego\",\n  \"action\": \"SET_SPEED\",\n  \"parameters\": {\n    \"speed\": \"Media\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api}}/api/v1/actuators/command",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "actuators",
+                "command"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Comando: STOP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actuator_code\": \"bomba_riego\",\n  \"action\": \"STOP\",\n  \"parameters\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api}}/api/v1/actuators/command",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "actuators",
+                "command"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Calibración de sensor",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sensor_code\": \"SENS-SOIL-01\",\n  \"raw_dry_point\": 3140,\n  \"raw_wet_point\": 1280,\n  \"offset_linear\": 1.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api}}/api/v1/sensors/calibration",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sensors",
+                "calibration"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Bitácora de auditoría",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional en el adaptador: sin él actúa la cuenta de equipo OPERADOR"
+              }
+            ],
+            "url": {
+              "raw": "{{api}}/api/v1/audit/logs?severity=manual,auto,alert&from=2026-11-22T00:00:00Z&to=2026-11-23T00:00:00Z&page=1&per_page=50",
+              "host": [
+                "{{api}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "audit",
+                "logs"
+              ],
+              "query": [
+                {
+                  "key": "severity",
+                  "value": "manual,auto,alert"
+                },
+                {
+                  "key": "from",
+                  "value": "2026-11-22T00:00:00Z"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-11-23T00:00:00Z"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "Defecto conocido al 22 nov 2026: responde 500 (ver docs/API.md y docs/casos_prueba.md DEF-01)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "PostgREST",
+      "item": [
+        {
+          "name": "Auth",
+          "item": [
+            {
+              "name": "Login en Supabase Auth (obtener token)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"eq-automatizacion@invernadero.test\",\n  \"password\": \"<contraseña de la cuenta>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{supabase_url}}/auth/v1/token?grant_type=password",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "v1",
+                    "token"
+                  ],
+                  "query": [
+                    {
+                      "key": "grant_type",
+                      "value": "password"
+                    }
+                  ]
+                },
+                "description": "Copiar access_token de la respuesta a la variable token (solo en el Environment local)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lecturas",
+          "item": [
+            {
+              "name": "Última medición",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Accept-Profile",
+                    "value": "inv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/v_ultima_medicion?select=codigo,variable,valor,unidad,valido,estado,evaluacion,tomado_en&order=codigo",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "v_ultima_medicion"
+                  ],
+                  "query": [
+                    {
+                      "key": "select",
+                      "value": "codigo,variable,valor,unidad,valido,estado,evaluacion,tomado_en"
+                    },
+                    {
+                      "key": "order",
+                      "value": "codigo"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Lecturas por código, zona y fecha",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Accept-Profile",
+                    "value": "inv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/v_lectura?codigo=eq.SENS-SOIL-01&zona=eq.Zona 1&tomado_en=gte.2026-11-22T00:00:00Z&tomado_en=lt.2026-11-23T00:00:00Z&valido=is.true&order=tomado_en.asc&limit=100",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "v_lectura"
+                  ],
+                  "query": [
+                    {
+                      "key": "codigo",
+                      "value": "eq.SENS-SOIL-01"
+                    },
+                    {
+                      "key": "zona",
+                      "value": "eq.Zona 1"
+                    },
+                    {
+                      "key": "tomado_en",
+                      "value": "gte.2026-11-22T00:00:00Z"
+                    },
+                    {
+                      "key": "tomado_en",
+                      "value": "lt.2026-11-23T00:00:00Z"
+                    },
+                    {
+                      "key": "valido",
+                      "value": "is.true"
+                    },
+                    {
+                      "key": "order",
+                      "value": "tomado_en.asc"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "100"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "fn_historico",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Profile",
+                    "value": "inv"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"p_nodo\": \"invernadero_albahaca_01\",\n  \"p_variable\": \"humedad_suelo\",\n  \"p_desde\": \"2026-11-22T00:00:00Z\",\n  \"p_hasta\": \"2026-11-23T00:00:00Z\",\n  \"p_intervalo\": \"1 hour\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/rpc/fn_historico",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "rpc",
+                    "fn_historico"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "fn_estadistica",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Profile",
+                    "value": "inv"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"p_codigo\": \"SENS-SOIL-01\",\n  \"p_desde\": \"2026-11-22T00:00:00Z\",\n  \"p_hasta\": \"2026-11-23T00:00:00Z\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/rpc/fn_estadistica",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "rpc",
+                    "fn_estadistica"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Estado del nodo",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Accept-Profile",
+                    "value": "inv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/v_estado_nodo",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "v_estado_nodo"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Bitácora",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Accept-Profile",
+                    "value": "inv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/v_bitacora?tipo=in.(manual,auto,alert)&ocurrido_en=gte.2026-11-22T00:00:00Z&order=ocurrido_en.desc&limit=50",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "v_bitacora"
+                  ],
+                  "query": [
+                    {
+                      "key": "tipo",
+                      "value": "in.(manual,auto,alert)"
+                    },
+                    {
+                      "key": "ocurrido_en",
+                      "value": "gte.2026-11-22T00:00:00Z"
+                    },
+                    {
+                      "key": "order",
+                      "value": "ocurrido_en.desc"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "50"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Dataset para IA (CSV)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Accept-Profile",
+                    "value": "inv"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "text/csv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/v_dataset_ia?tomado_en=gte.2026-11-22T00:00:00Z&order=tomado_en.asc",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "v_dataset_ia"
+                  ],
+                  "query": [
+                    {
+                      "key": "tomado_en",
+                      "value": "gte.2026-11-22T00:00:00Z"
+                    },
+                    {
+                      "key": "order",
+                      "value": "tomado_en.asc"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Paquetes recientes (evidencia E2E)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Accept-Profile",
+                    "value": "inv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/paquete?select=id,recibido_en,nodo_codigo,procesado,error_procesamiento&order=id.desc&limit=15",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "paquete"
+                  ],
+                  "query": [
+                    {
+                      "key": "select",
+                      "value": "id,recibido_en,nodo_codigo,procesado,error_procesamiento"
+                    },
+                    {
+                      "key": "order",
+                      "value": "id.desc"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "15"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Alertas",
+          "item": [
+            {
+              "name": "Alertas activas",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Accept-Profile",
+                    "value": "inv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/v_alertas_activas",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "v_alertas_activas"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Mi id de usuario (fn_usuario_actual)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Profile",
+                    "value": "inv"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/rpc/fn_usuario_actual",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "rpc",
+                    "fn_usuario_actual"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Reconocer alerta",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Profile",
+                    "value": "inv"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Prefer",
+                    "value": "return=representation"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reconocida_por\": 1,\n  \"reconocida_en\": \"2026-11-22T16:20:00Z\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/alerta?id=eq.12",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "alerta"
+                  ],
+                  "query": [
+                    {
+                      "key": "id",
+                      "value": "eq.12"
+                    }
+                  ]
+                },
+                "description": "reconocida_por debe ser el id del propio usuario (resultado de fn_usuario_actual). Solo OPERADOR o ADMIN."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actuadores y comandos",
+          "item": [
+            {
+              "name": "Actuadores",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Accept-Profile",
+                    "value": "inv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/actuador",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "actuador"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Comando manual",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Profile",
+                    "value": "inv"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Prefer",
+                    "value": "return=representation"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"actuador_id\": 1,\n  \"accion\": \"ENCENDER\",\n  \"duracion_s\": 10,\n  \"origen\": \"MANUAL\",\n  \"motivo\": \"Riego de prueba\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/comando_actuador",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "comando_actuador"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Comando ENVIADO (Conectividad)",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Profile",
+                    "value": "inv"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"estado\": \"ENVIADO\",\n  \"enviado_en\": \"2026-11-22T16:21:00Z\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/comando_actuador?id=eq.57",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "comando_actuador"
+                  ],
+                  "query": [
+                    {
+                      "key": "id",
+                      "value": "eq.57"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Comando CONFIRMADO (Conectividad)",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Profile",
+                    "value": "inv"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"estado\": \"CONFIRMADO\",\n  \"confirmado_en\": \"2026-11-22T16:21:02Z\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/comando_actuador?id=eq.57",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "comando_actuador"
+                  ],
+                  "query": [
+                    {
+                      "key": "id",
+                      "value": "eq.57"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Paro general (rpc)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Profile",
+                    "value": "inv"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"p_motivo\": \"Paro de prueba\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/rpc/fn_detener_todo",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "rpc",
+                    "fn_detener_todo"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Automatización",
+          "item": [
+            {
+              "name": "Reglas activas",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Accept-Profile",
+                    "value": "inv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/regla_automatizacion?activa=is.true&order=prioridad",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "regla_automatizacion"
+                  ],
+                  "query": [
+                    {
+                      "key": "activa",
+                      "value": "is.true"
+                    },
+                    {
+                      "key": "order",
+                      "value": "prioridad"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Nueva regla",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Profile",
+                    "value": "inv"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Regar con sustrato seco\",\n  \"estado_disparador\": \"RIEGO_NECESARIO\",\n  \"actuador_id\": 1,\n  \"accion\": \"ENCENDER\",\n  \"duracion_s\": 20,\n  \"espera_s\": 600,\n  \"prioridad\": 10\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/regla_automatizacion",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "regla_automatizacion"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Predicciones",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Accept-Profile",
+                    "value": "inv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/prediccion_ia?order=generado_en.desc&limit=10",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "prediccion_ia"
+                  ],
+                  "query": [
+                    {
+                      "key": "order",
+                      "value": "generado_en.desc"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Nueva predicción",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Profile",
+                    "value": "inv"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nodo_id\": 1,\n  \"variable_id\": 7,\n  \"modelo\": \"modelo-demo-v1\",\n  \"tipo\": \"PRONOSTICO\",\n  \"objetivo_en\": \"2026-11-22T18:00:00Z\",\n  \"valor\": 38.5,\n  \"confianza\": 0.82,\n  \"detalle\": {}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/prediccion_ia",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "prediccion_ia"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Umbrales",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Accept-Profile",
+                    "value": "inv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/umbral",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "umbral"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Cambiar un umbral",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Profile",
+                    "value": "inv"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"min_optimo\": 30,\n  \"max_optimo\": 70\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/umbral?id=eq.1",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "umbral"
+                  ],
+                  "query": [
+                    {
+                      "key": "id",
+                      "value": "eq.1"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Catálogos",
+          "item": [
+            {
+              "name": "cultivo",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Accept-Profile",
+                    "value": "inv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/cultivo",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "cultivo"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "invernadero",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Accept-Profile",
+                    "value": "inv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/invernadero",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "invernadero"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "nodo",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Accept-Profile",
+                    "value": "inv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/nodo",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "nodo"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "sensor",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Accept-Profile",
+                    "value": "inv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/sensor",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "sensor"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "variable",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Accept-Profile",
+                    "value": "inv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/variable",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "variable"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "estado_sensor",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Accept-Profile",
+                    "value": "inv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/estado_sensor",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "estado_sensor"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "actividad",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "apikey",
+                    "value": "{{anon_key}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Accept-Profile",
+                    "value": "inv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{supabase_url}}/rest/v1/actividad",
+                  "host": [
+                    "{{supabase_url}}"
+                  ],
+                  "path": [
+                    "rest",
+                    "v1",
+                    "actividad"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
