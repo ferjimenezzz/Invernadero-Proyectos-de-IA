@@ -26,7 +26,7 @@ npm start
 Esperado, en este orden aproximado:
 ```
 [api] adaptador REST escuchando en 0.0.0.0:3000
-[HH:MM:SS] MQTT conectado, suscrito a invernadero/albahaca_01/telemetria
+[HH:MM:SS] MQTT conectado, suscrito a invernadero/albahaca/invernadero_albahaca_01/telemetria
 ```
 Si imprime `Falta SUPABASE_URL...`, revisar el `.env`. Si ya había mensajes en el búfer: `búfer con N pendientes de una sesión anterior`.
 
@@ -35,7 +35,7 @@ Si imprime `Falta SUPABASE_URL...`, revisar el `.env`. Si ya había mensajes en 
 ```
 npm run simular -- --validos 12 --invalidos --intervalo 1000
 ```
-Esperado en la terminal 3: `enviado 1/15` ... `enviado 15/15` y `Resumen: 12 válidos + 3 inválidos publicados en invernadero/albahaca_01/telemetria`. Los mensajes 13 a 15 son: texto que no es JSON, un JSON sin `sensores` y un JSON con el DS18B20 desconectado.
+Esperado en la terminal 3: `enviado 1/15` ... `enviado 15/15` y `Resumen: 12 válidos + 3 inválidos publicados en invernadero/albahaca/invernadero_albahaca_01/telemetria`. Los mensajes 13 a 15 son: texto que no es JSON, un JSON sin `sensores` y un JSON con el DS18B20 desconectado.
 
 Esperado en la terminal 2 (suscriptor), un renglón por mensaje:
 - Mensajes 1 a 12: `OK paquete=<id> nodo=invernadero_albahaca_01`.

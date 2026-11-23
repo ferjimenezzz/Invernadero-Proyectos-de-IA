@@ -48,7 +48,7 @@ async function main() {
     },
   });
   const mensajes = generarMensajes(Number(a.validos), { invalidos: a.invalidos, nodo: a.nodo });
-  const topic = env('MQTT_TOPIC_TELEMETRIA', 'invernadero/albahaca_01/telemetria');
+  const topic = env('MQTT_TOPIC_TELEMETRIA', 'invernadero/albahaca/invernadero_albahaca_01/telemetria');
   const mq = await mqtt.connectAsync(env('MQTT_URL', 'mqtt://localhost:1883'), {
     username: process.env.MQTT_USERNAME || undefined,
     password: process.env.MQTT_PASSWORD || undefined,

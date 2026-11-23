@@ -9,7 +9,7 @@ import { crearProcesador, hora } from './ingesta.js';
 const RAIZ = fileURLToPath(new URL('..', import.meta.url));
 const aviso = (t) => console.log(`[${hora()}] ${t}`);
 
-const topicTelemetria = env('MQTT_TOPIC_TELEMETRIA', 'invernadero/albahaca_01/telemetria');
+const topicTelemetria = env('MQTT_TOPIC_TELEMETRIA', 'invernadero/albahaca/invernadero_albahaca_01/telemetria');
 const cliente = clienteServicio(); // falla con mensaje claro si falta SUPABASE_URL / llave
 
 async function ingestar({ payload, topic, recibido_en }) {

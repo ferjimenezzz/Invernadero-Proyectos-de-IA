@@ -8,8 +8,8 @@ Acuerdo entre Hardware e IoT (firmware del ESP32), Conectividad (broker) y BD y 
 
 | Dirección | Topic | Cómo se define |
 |---|---|---|
-| Telemetría (ESP32 → suscriptor) | `invernadero/albahaca_01/telemetria` | Variable de entorno `MQTT_TOPIC_TELEMETRIA`; ese es el valor por omisión del suscriptor y de `simular.js`. Coincide con `nodo.topic_telemetria` del seed, pero el suscriptor usa la variable, no la columna: deben mantenerse iguales. |
-| Comandos (despachador → ESP32) | `invernadero/albahaca_01/comandos` | Solo existe como dato: `nodo.topic_comandos` del seed. **Pendiente de confirmar con Conectividad.** Ningún código de este repo publica en él. |
+| Telemetría (ESP32 → suscriptor) | `invernadero/albahaca/invernadero_albahaca_01/telemetria` | **Confirmado por Conectividad el 23 nov.** Variable de entorno `MQTT_TOPIC_TELEMETRIA`; ese es el valor por omisión del suscriptor y de `simular.js`. Coincide con `nodo.topic_telemetria` del seed, pero el suscriptor usa la variable, no la columna: deben mantenerse iguales. |
+| Comandos (despachador → ESP32) | `invernadero/albahaca_01/comandos` | Solo existe como dato: `nodo.topic_comandos` del seed. **Pendiente de confirmar con Conectividad**; por su patrón probablemente sea `invernadero/albahaca/invernadero_albahaca_01/...`. Ningún código de este repo publica en él. |
 
 - **QoS 1** (al menos una vez): el suscriptor se suscribe con QoS 1 y el simulador publica con QoS 1. Por eso puede haber duplicados, y por eso la ingesta es idempotente (sección 7).
 - El suscriptor usa `clean: true`, reconexión cada 2 s y un `clientId` único por proceso (`suscriptor_bd_<pid>_<aleatorio>`).
@@ -22,7 +22,7 @@ Acuerdo entre Hardware e IoT (firmware del ESP32), Conectividad (broker) y BD y 
 | `MQTT_URL` | `mqtt://localhost:1883` | Conectividad entregó un broker **EMQX Cloud** con TLS: `mqtts://<host>:8883` (el host va solo en `.env`). Conexión probada el 23 nov |
 | `MQTT_USERNAME` | (vacío = sin autenticación) | Entregado por Conectividad (usuario del suscriptor); va solo en `.env` |
 | `MQTT_PASSWORD` | (vacío) | Entregado por Conectividad; va solo en `.env` |
-| `MQTT_TOPIC_TELEMETRIA` | `invernadero/albahaca_01/telemetria` | **Pendiente de Conectividad.** En su broker se vio `invernadero/albahaca/invernadero_albahaca_01/estado` (mensaje retenido `OFFLINE`), así que su telemetría probablemente sigue ese patrón y no el nuestro. No se adivina: hay que confirmarlo |
+| `MQTT_TOPIC_TELEMETRIA` | `invernadero/albahaca/invernadero_albahaca_01/telemetria` | Confirmado por Conectividad el 23 nov. El suscriptor real se conectó y se suscribió sin error. En el mismo broker está `invernadero/albahaca/invernadero_albahaca_01/estado` (mensaje retenido `OFFLINE` cuando el ESP32 está desconectado) |
 
 El broker no permite suscribirse a `#`. El suscriptor se suscribe a un solo topic exacto, así que basta con que la ACL le permita ese topic.
 | `BUFFER_PATH` | `./buffer/pendientes.jsonl` (relativo a `backend/`) | Propio del suscriptor |

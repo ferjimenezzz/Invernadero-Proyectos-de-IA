@@ -102,7 +102,7 @@ Bloqueantes de configuración, para cuando se conecte:
 | # | Tema | Repo (maqueta) | Documentos / BD | Decisión | Clase |
 |---|---|---|---|---|---|
 | C1 | Cultivo | Hortalizas y tomate | Albahaca, *Ocimum basilicum*, 1.00 × 0.60 m | Albahaca. Leerlo de `/invernaderos/actual`. | I |
-| C2 | Topics MQTT | `invernadero/zona1/...` | `invernadero/albahaca_01/telemetria` y `/comandos` | Los del seed, que son configurables por `.env`. Falta acordarlo por escrito con Conectividad. | I |
+| C2 | Topics MQTT | `invernadero/zona1/...` | `invernadero/albahaca/invernadero_albahaca_01/telemetria` (confirmado por Conectividad el 23 nov) y `invernadero/albahaca_01/comandos` | Configurables por `.env`. Falta confirmar el de comandos. | I |
 | C3 | Formato del mensaje | `temp_c`, `moisture_ch1`… | JSON del documento de Hardware | El de Hardware. El otro se guarda como inválido. | M |
 | C4 | Nodos | 3 nodos (uno LoRa), "Node #08" | 1 nodo, `invernadero_albahaca_01` | Un solo nodo. | I |
 | C5 | Sensores | 2 sondas, sin HC-SR04 | DHT22, BH1750, DS18B20, HC-SR04 y 3 capacitivos | El catálogo de la BD. El nivel del tanque tiene que mostrarse porque es lo que bloquea la bomba. | I |

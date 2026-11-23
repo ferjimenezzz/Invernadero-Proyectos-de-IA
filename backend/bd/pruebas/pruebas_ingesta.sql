@@ -216,7 +216,7 @@ BEGIN
     ASSERT (SELECT count(*) FROM inv.v_dataset_ia) = 3, 'v_dataset_ia: 1 fila por paquete procesado';
     ASSERT (SELECT hubo_falla_hw FROM inv.v_dataset_ia WHERE tomado_en = '2026-11-01 12:00:10+00'), 'v_dataset_ia: falla HW';
     ASSERT (SELECT alertas_abiertas = 4 AND intervalo_ms = 5000 AND firmware_version = '1.0'
-               AND topic_telemetria = 'invernadero/albahaca_01/telemetria'
+               AND topic_telemetria = 'invernadero/albahaca/invernadero_albahaca_01/telemetria'
               FROM inv.v_estado_nodo), 'v_estado_nodo';
 END $$;
 

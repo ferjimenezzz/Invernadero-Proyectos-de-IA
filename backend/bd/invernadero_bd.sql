@@ -1099,7 +1099,7 @@ SELECT 'Invernadero Albahaca 01', 100, 60, id FROM inv.cultivo WHERE codigo = 'a
 
 INSERT INTO inv.nodo (codigo, invernadero_id, placa, firmware_version, topic_telemetria, topic_comandos, intervalo_ms)
 SELECT 'invernadero_albahaca_01', id, 'esp32doit-devkit-v1', '1.0',
-       'invernadero/albahaca_01/telemetria', 'invernadero/albahaca_01/comandos', 5000
+       'invernadero/albahaca/invernadero_albahaca_01/telemetria', 'invernadero/albahaca_01/comandos', 5000
   FROM inv.invernadero WHERE nombre = 'Invernadero Albahaca 01';
 
 INSERT INTO inv.tipo_sensor (modelo, clave_json, es_arreglo, protocolo, libreria, descripcion) VALUES
