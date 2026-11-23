@@ -112,7 +112,8 @@ GRANT EXECUTE ON FUNCTION
       inv.fn_calibrar_sensor(text, jsonb),
       inv.fn_usuario_actual(),
       inv.fn_rol_actual(),
-      inv.fn_codigo_dispositivo(text, integer)
+      inv.fn_codigo_dispositivo(text, integer),
+      inv.fn_codigo_sensor(integer)
    TO authenticated;
 -- fn_ingestar_paquete y fn_purgar_payload: solo service_role (ya lo tiene arriba).
 

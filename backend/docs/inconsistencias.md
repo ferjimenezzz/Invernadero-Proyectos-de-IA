@@ -118,38 +118,33 @@ Bloqueantes de configuración, para cuando se conecte:
 | C15 | Restauración | — | PostgreSQL 16 | Se restaura en el 18 instalado. Un volcado de `pg_dump` 18 puede no entrar en un 16. | M |
 | C16 | Afirmaciones falsas | "TLS 1.3 / mTLS", firma SHA-256 fija | — | Quitarlas de la web. | M |
 
-## 5. Supabase compartido
+## 5. Supabase: un proyecto propio por equipo
 
-El proyecto usará el Supabase de otra persona, con un esquema propio (`inv`). Eso cambia varias cosas del SQL:
+Se evaluó usar el Supabase de otra persona con un esquema propio, pero **se descartó: cada equipo usa su propio proyecto** (confirmado el 22 nov). Por eso el SQL se queda como estaba diseñado, para un proyecto propio:
+- el perfil se crea con un trigger en `auth.users`;
+- la service_role la usa solo el suscriptor;
+- la purga de 7 días se programa con pg_cron.
 
-| # | Hallazgo | Dónde | Cambio propuesto | Clase |
-|---|---|---|---|---|
-| S1 | Trigger en `auth.users`: crea un perfil `inv.usuario` por **cada** usuario de la app del dueño. Si fallara, **bloquearía sus registros**. | `bd/supabase.sql:41-59` | Quitar el trigger. `scripts/usuarios.js` crea el perfil de nuestras cuentas directamente. | I |
-| S2 | La política de lectura es `TO authenticated USING (true)`: **cualquier usuario del proyecto del dueño leería nuestras tablas**. | `bd/supabase.sql:128` | Exigir un perfil activo: `USING ((SELECT inv.fn_rol_actual()) IS NOT NULL)`. | I |
-| S3 | `CREATE EXTENSION pg_cron` activa una extensión en un proyecto ajeno. | `bd/supabase.sql:207` | No crearla. Programar la purga solo si el dueño ya tiene pg_cron; si no, avisar. | M |
-| S4 | El suscriptor usaría la **service_role del dueño**, que da acceso total a todo su proyecto. | `src/supabase.js`, `src/suscriptor.js` | Usar una cuenta de equipo nuestra con permiso solo para `fn_ingestar_paquete`. Así no hay que pedirle su llave maestra. | I |
-| S5 | Comparte el límite del plan Free: **500 MB para los dos proyectos**. A 5 s nuestro esquema crece unos 20–40 MB por día de sesión. | — | Acordarlo con el dueño. Mantener la purga de 7 días y medir el uso de disco cada semana. | I |
-| S6 | Nuestras cuentas (`eq-*@invernadero.test`) quedan en su `auth.users`. Si sus políticas permiten leer a cualquier `authenticated`, nuestras cuentas verían sus datos. | — | Avisar al dueño. | M |
-| S7 | Exponer `inv` en Settings → API, agregar nuestras tablas a `supabase_realtime` y la pausa tras una semana sin uso dependen del dueño. | `bd/supabase.sql:7-8, 186-199` | Pedírselo y documentarlo. | M |
+Lo que sigue aplicando del plan Free: los 500 MB son solo nuestros, pero a 5 s el esquema crece unos 20–40 MB por día de sesión. Se mantiene la purga de 7 días y se mide el uso de disco cada semana. El proyecto se pausa tras una semana sin uso.
 
 ## 6. Pendientes del backend (nuestros)
 
-| # | Hallazgo | Dónde | Propuesta | Clase |
+| # | Hallazgo | Dónde | Estado | Clase |
 |---|---|---|---|---|
-| 6.1 | **API abierta.** Sin `Authorization` actúa como la cuenta OPERADOR, con CORS `*` y escuchando en 0.0.0.0. Cualquiera en la red puede prender la bomba o hacer el paro. | `src/api/app.js:11-32`, `datos.js:8-15` | **Decisión pendiente:** exigir token en las escrituras (rompe la app móvil hasta que mande el token) o dejarlo como riesgo aceptado para la demo en LAN. | I |
-| 6.2 | `riego-manual` y `PATCH {encendido}` mandan ENCENDER **sin duración**. | `src/api/movil.js:119,128` | Usar la duración de la regla de riego activa (10 s en el seed), así no se inventa ningún número. | I |
-| 6.3 | Un error PGRST1xx sale como "400 Datos inválidos" y sin log, lo que esconde problemas de configuración como un esquema no expuesto. | `src/api/datos.js:26`, `app.js:44-47` | PGRST106 y parecidos como 503 con log; solo los errores de parámetros como 400. | I |
-| 6.4 | `/api/v1/audit/logs` no filtra por fecha ni acepta varios tipos a la vez. | `src/api/web.js:56-67` | Agregar los parámetros `from`, `to` y `severity` con varios valores. | I |
-| 6.5 | Aparece "Zona Zona 1": la ubicación ya dice "Zona" y el formato la vuelve a anteponer. | `src/api/formato.js:133,142` | Quitar el prefijo. | M |
-| 6.6 | En el detalle de un sensor salen todas las reglas activas, no solo las de ese sensor. | `formato.js:290-295` | Filtrar por los estados del sensor. | M |
-| 6.7 | `/mediciones/historico` no filtra por `indice`. Hoy no se nota porque hay un sensor por variable. | `movil.js:48-52` | Filtrar `indice = 1`. | M |
-| 6.8 | El título de la alerta muestra el código crudo (por ejemplo `RIEGO_NECESARIO`). | `formato.js:395` | Usar la descripción del estado. | M |
-| 6.9 | Si se invalida la sesión de la cuenta de equipo, queda en caché y todo responde 401 hasta reiniciar. | `datos.js:10-13` | Al recibir 401, olvidar el cliente y volver a iniciar sesión. | M |
-| 6.10 | La velocidad del ventilador no coincide entre web y móvil: la web usa 33/66/100 y la móvil 50/100 con corte en 75. | `web.js`, `formato.js` | Unificar. | M |
-| 6.11 | La calibración no valida el rango 0–4095 ni que el punto seco sea mayor que el mojado. | `web.js:48-54` | Validar en el adaptador. | M |
-| 6.12 | En la bitácora, las alertas del tanque salen con el código `SENS-DIST-01` y no `SENS-TANK-01`. | `bd/invernadero_bd.sql:1015-1019` | Elegir la variable que corresponde al estado. | M |
-| 6.13 | La contraseña de la BD viaja como argumento de `pg_dump` y `psql`, y se ve en el administrador de tareas. | `scripts/respaldo.js`, `scripts/psql.js` | Pasarla por `PGPASSWORD`. | M |
-| 6.14 | `engines` dice Node ≥ 20.12, pero el glob de `node --test` necesita 21 o más. | `package.json:8` | Cambiar a `>=22`. | M |
+| 6.1 | **API abierta.** Sin `Authorization` actúa como la cuenta OPERADOR, con CORS `*` y escuchando en 0.0.0.0. Cualquiera en la red puede prender la bomba o hacer el paro. | `src/api/app.js:11-32`, `datos.js:8-15` | **Decisión pendiente.** Opciones: exigir token en las escrituras (rompe la app móvil hasta que mande el token) o dejarlo como riesgo aceptado para la demo en LAN. | I |
+| 6.2 | `riego-manual` y `PATCH {encendido}` mandaban ENCENDER **sin duración**. | `src/api/movil.js` | Corregido en la BD: un ENCENDER manual sin duración toma la de la regla activa de ese actuador (10 s en el seed). Si no hay regla, queda sin duración. | I |
+| 6.3 | Un error PGRST1xx salía como "400 Datos inválidos" y sin log. | `src/api/datos.js` | Corregido: solo PGRST100/102/103 son 400. El resto (p. ej. PGRST106, esquema no expuesto) es 500 y queda en el log. | I |
+| 6.4 | `/api/v1/audit/logs` no filtraba por fecha ni aceptaba varios tipos. | `src/api/web.js` | Corregido: `from`, `to` (ISO 8601) y `severity` con varios valores separados por coma. | I |
+| 6.5 | Aparecía "Zona Zona 1". | `src/api/formato.js` | Corregido: la ubicación se muestra tal cual. | M |
+| 6.6 | En el detalle de un sensor salen todas las reglas activas. | `formato.js` | Abierto: el modelo no liga estados con tipos de sensor, así que no hay con qué filtrar sin inventar la relación. | M |
+| 6.7 | `/mediciones/historico` no filtraba por `indice`. | `movil.js` | Corregido. | M |
+| 6.8 | El título de la alerta mostraba el código crudo. | `formato.js` | Corregido: "Riego necesario" en vez de `RIEGO_NECESARIO`. | M |
+| 6.9 | Una sesión vencida de la cuenta de equipo quedaba en caché. | `datos.js` | Corregido: con un 401 se olvida y se vuelve a entrar en la siguiente petición. | M |
+| 6.10 | La velocidad del ventilador no coincidía entre web y móvil. | `formato.js` | Corregido: más de 50 % es "alta" en las dos. | M |
+| 6.11 | La calibración no validaba los puntos crudos. | `web.js` | Corregido: enteros 0–4095 y punto seco mayor que el mojado. | M |
+| 6.12 | Las alertas del tanque salían con el código `SENS-DIST-01`. | BD y `movil.js` | Corregido: el código principal de un sensor es la variable con umbral y, si ninguna tiene, la de menor id. Se aplica igual en la BD y en el adaptador. | M |
+| 6.13 | La contraseña de la BD viajaba como argumento de `pg_dump` y `psql`. | `scripts/respaldo.js`, `scripts/psql.js` | Corregido: va por `PGPASSWORD`. | M |
+| 6.14 | `engines` pedía Node ≥ 20.12. | `package.json` | Corregido: `>=22`. | M |
 
 ## 7. Para los otros equipos
 
@@ -197,7 +192,5 @@ El proyecto usará el Supabase de otra persona, con un esquema propio (`inv`). E
 ## 8. Preguntas abiertas
 
 1. ¿Las escrituras de la API exigen token (§6.1)?
-2. ¿Quién es el dueño del Supabase? ¿Acepta exponer `inv`, compartir los 500 MB y activar pg_cron (§5)?
-3. ¿El suscriptor entra con una cuenta de equipo en lugar de la service_role del dueño (S4)?
-4. ¿Cuál es la duración por defecto del riego manual (§6.2)?
-5. ¿Conectividad y Hardware entregan algo antes de la presentación? Sin el despachador ni el firmware, la demo de punta a punta no mueve la bomba.
+2. ¿La duración del riego manual sale de la regla de riego (10 s hoy), o el equipo define otra (§6.2)? Se cambia en `regla_automatizacion` sin tocar código.
+3. ¿Conectividad y Hardware entregan algo antes de la presentación? Sin el despachador ni el firmware, la demo de punta a punta no mueve la bomba.

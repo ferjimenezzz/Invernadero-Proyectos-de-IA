@@ -130,7 +130,8 @@ function tendencia(r) {
   return { icon: dd > 0 ? 'trending-up' : 'trending-down', text: `${dd > 0 ? '+' : ''}${dd} ${r.unidad ?? ''} en ${t.length} lecturas`.replace('  ', ' ') };
 }
 
-const nombreSensor = (r) => r.variable_nombre + (r.zona ? ` · Zona ${r.zona}` : '');
+// zona = sensor.ubicacion tal cual ("Zona 1", "Tanque principal"…): ya trae su propio texto.
+const nombreSensor = (r) => r.variable_nombre + (r.zona ? ` · ${r.zona}` : '');
 
 export function sensorMovil(r, ahora) {
   const n = nivel(r);
@@ -139,7 +140,7 @@ export function sensorMovil(r, ahora) {
   return {
     id: r.codigo,
     name: nombreSensor(r),
-    location: r.zona ? `Zona ${r.zona}` : 'Invernadero',
+    location: r.zona || 'Invernadero',
     icon: iconoVariable(r.variable),
     online: lecturaVigente(r, ahora),
     status: n,
@@ -244,7 +245,7 @@ export function detalleSensor({ row, stats, historico, reglas, cultivo, firmware
   });
   return {
     id: row.codigo,
-    module: `NODO ${String(row.nodo).toUpperCase()}${row.zona ? ` • ZONA ${row.zona}` : ''}`,
+    module: `NODO ${String(row.nodo).toUpperCase()}${row.zona ? ` • ${String(row.zona).toUpperCase()}` : ''}`,
     title: nombreSensor(row),
     icon: iconoVariable(row.variable),
     value: valido ? formatearValor(Number(row.valor), unidad) : '--',
@@ -342,7 +343,8 @@ export function resumenActuadores({ actuadores, comandos, reglas, temperatura, p
       }
       if (meta.kind === 'light')
         return { ...base, kind: 'light', pwm: pot, statusText: (on ? `${pot}% de potencia` : 'Apagadas') + nota };
-      const level = !on ? 'off' : pot >= 75 ? 'high' : 'low';
+      // > 50 = alta: así coinciden la móvil (low 50, high 100) y la web (Baja 33, Media 66, Alta 100).
+      const level = !on ? 'off' : pot > 50 ? 'high' : 'low';
       return {
         ...base,
         kind: 'fan',
@@ -379,6 +381,8 @@ export function comandoDeMovil(body) {
 /* ── Alertas ── */
 
 const CRITICAS = ['CRITICO', 'ERROR_HW'];
+// RIEGO_NECESARIO -> "Riego necesario"
+export const legible = (codigo) => String(codigo).charAt(0) + String(codigo).slice(1).toLowerCase().replaceAll('_', ' ');
 
 export function notificacionAlerta(a, { codigoSensor, resuelta }, ahora) {
   const critica = CRITICAS.includes(a.categoria);
@@ -392,7 +396,7 @@ export function notificacionAlerta(a, { codigoSensor, resuelta }, ahora) {
     kind: critica ? 'critica' : 'advertencia',
     tag: `${critica ? 'CRÍTICA' : 'ADVERTENCIA'} • ${resuelta ? 'RESUELTA' : 'ACTIVA'}`,
     icon: a.categoria === 'ERROR_HW' ? 'chip' : critica ? 'alert-circle-outline' : 'alert-outline',
-    title: `${sensor ?? 'Sistema'} • ${a.estado}`,
+    title: `${sensor ?? 'Sistema'} • ${legible(a.estado)}`,
     body: codigoSensor ? `\`${codigoSensor}\` ${a.mensaje}` : String(a.mensaje),
     time: resuelta && fin ? hora12(fin) : relativo(a.ultima_vez_en, ahora),
     read: resuelta ? true : !!a.reconocida,

@@ -23,7 +23,8 @@ export function aError(e, status) {
   if (status === 401 || code === 'PGRST301' || code === 'PGRST303' || /jwt/i.test(msg)) return new ErrorApi(401, 'Token inválido o vencido');
   if (code === '42501') return new ErrorApi(403, 'Sin permiso para esta operación');
   if (code === 'P0002' || code === 'PGRST116') return new ErrorApi(404, 'Recurso no encontrado');
-  if (/^(22|23)/.test(code) || code.startsWith('PGRST1')) return new ErrorApi(400, 'Datos inválidos para la base de datos');
+  // Solo errores de parámetros son del cliente; el resto de PGRST1xx (p. ej. PGRST106 esquema no expuesto) es configuración -> 500 con log.
+  if (/^(22|23)/.test(code) || ['PGRST100', 'PGRST102', 'PGRST103'].includes(code)) return new ErrorApi(400, 'Datos inválidos para la base de datos');
   if (/fetch failed|network|ECONN|ENOTFOUND|ETIMEDOUT|timed? ?out|EAI_AGAIN/i.test(msg)) return new ErrorApi(503, 'Supabase no disponible');
   const err = new ErrorApi(500, 'Error interno');
   err.causa = `${code} ${msg}`.trim(); // solo para el log del servidor
@@ -36,7 +37,9 @@ async function q(ctx, f, conCuenta = false) {
     if (r.error) throw aError(r.error, r.status);
     return conCuenta ? r : r.data;
   } catch (e) {
-    throw aError(e);
+    const err = aError(e);
+    if (err.estado === 401 && !ctx?.token) cuenta = undefined; // sesión de equipo vencida: volver a entrar en la siguiente petición
+    throw err;
   }
 }
 
@@ -122,11 +125,13 @@ export function crearDatos() {
 
     crearActividad: (ctx, fila) => q(ctx, (c) => c.from('actividad').insert(fila)),
 
-    async bitacora(ctx, { device, tipo, pagina, porPagina }) {
+    async bitacora(ctx, { device, tipos, desde, hasta, pagina, porPagina }) {
       const r = await q(ctx, (c) => {
         let s = c.from('v_bitacora').select('*', { count: 'exact' });
         if (device) s = s.eq('dispositivo', device);
-        if (tipo) s = s.eq('tipo', tipo);
+        if (tipos) s = s.in('tipo', tipos);
+        if (desde) s = s.gte('ocurrido_en', iso(desde));
+        if (hasta) s = s.lt('ocurrido_en', iso(hasta));
         const desde = (pagina - 1) * porPagina;
         return s.order('ocurrido_en', { ascending: false }).range(desde, desde + porPagina - 1);
       }, true);

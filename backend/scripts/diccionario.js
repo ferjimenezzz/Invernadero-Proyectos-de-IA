@@ -30,7 +30,7 @@ SELECT c.relname,
  WHERE c.relkind IN ('r','v')
  ORDER BY c.relkind, c.relname, a.attnum`;
 
-const r = psql(conexion({ db: BD_PRUEBAS }), ['-A', '-t', '-F', SEP, '-c', consulta]);
+const r = psql(conexion({ db: BD_PRUEBAS }), ['-A', '-t', '-F', SEP], consulta);
 if (!r.ok) {
   console.error(r.stderr.trim() || 'No se pudo leer el catálogo');
   process.exit(1);

@@ -49,7 +49,7 @@ export function rutasMovil({ datos, ahora }) {
     if (!row) throw new ErrorApi(404, 'No hay sensor para esa variable');
     const hasta = ahora().getTime();
     const desde = hasta - rango[0];
-    const hist = await datos.historico(req.ctx, { nodo: row.nodo, variable, desde, hasta, intervalo: rango[1] });
+    const hist = (await datos.historico(req.ctx, { nodo: row.nodo, variable, desde, hasta, intervalo: rango[1] })).filter((h) => h.indice === row.indice);
     res.json(serieMovil({ variable: req.query.variable, row, filas: hist, desde, hasta, rango: req.query.rango }));
   });
 
@@ -131,8 +131,11 @@ export function rutasMovil({ datos, ahora }) {
 
   r.get('/alertas', async (req, res) => {
     const [{ abiertas, resueltas }, filas] = await Promise.all([datos.alertas(req.ctx), datos.ultimas(req.ctx)]);
+    // Código principal del sensor físico (misma regla que la BD): la variable con umbral; si ninguna, la de menor id.
+    const conUmbral = (f) => [f.min_optimo, f.max_optimo, f.min_critico, f.max_critico].some((v) => v != null);
+    const mejor = (a, b) => (conUmbral(a) !== conUmbral(b) ? (conUmbral(a) ? a : b) : a.variable_id <= b.variable_id ? a : b);
     const porSensor = new Map();
-    for (const f of filas) if (!porSensor.has(f.sensor_id)) porSensor.set(f.sensor_id, f);
+    for (const f of filas) porSensor.set(f.sensor_id, porSensor.has(f.sensor_id) ? mejor(porSensor.get(f.sensor_id), f) : f);
     const t = ahora();
     const de = (a, resuelta) => {
       const s = porSensor.get(a.sensor_id);

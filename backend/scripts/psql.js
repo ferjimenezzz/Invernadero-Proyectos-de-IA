@@ -32,11 +32,25 @@ export function conexion({ supabase = false, db } = {}) {
   return url.toString();
 }
 
+// Para psql / pg_dump: la URL sin contraseña (los argumentos se ven en la lista de procesos)
+// y la contraseña en PGPASSWORD del proceso hijo.
+export function sinClave(url) {
+  const u = new URL(url);
+  const clave = decodeURIComponent(u.password);
+  u.password = '';
+  const env = { ...process.env, PGCLIENTENCODING: 'UTF8' }; // los .sql llevan acentos
+  if (clave) env.PGPASSWORD = clave;
+  return { url: u.toString(), env };
+}
+
 // Ejecuta psql; devuelve { ok, stdout, stderr }. Los archivos van con ON_ERROR_STOP.
-export function psql(url, args) {
-  const r = spawnSync(binario(), ['-X', '-q', '-v', 'ON_ERROR_STOP=1', '-d', url, ...args], {
+// entrada: SQL por stdin (en Windows los argumentos no-ASCII llegan en la página de códigos ANSI).
+export function psql(url, args, entrada) {
+  const c = sinClave(url);
+  const r = spawnSync(binario(), ['-X', '-q', '-v', 'ON_ERROR_STOP=1', '-d', c.url, ...args], {
     encoding: 'utf8',
-    env: { ...process.env, PGCLIENTENCODING: 'UTF8' }, // los .sql llevan acentos
+    env: c.env,
+    input: entrada,
   });
   if (r.error) return { ok: false, stdout: '', stderr: `No se pudo ejecutar psql: ${r.error.message}` };
   return { ok: r.status === 0, stdout: r.stdout, stderr: r.stderr };

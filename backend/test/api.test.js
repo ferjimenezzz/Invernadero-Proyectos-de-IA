@@ -6,7 +6,8 @@ import { randomUUID } from 'node:crypto';
 // Contraseña de prueba generada al vuelo: el login de estas pruebas es falso y no hay ninguna cuenta real.
 const CLAVE = randomUUID();
 import { crearApp } from '../src/api/app.js';
-import { ErrorApi, bandaConfort, comandoDeMovil, cuando, etiquetasX, hora12, puntoRocio, relativo, telemetriaWeb, vpd, medicionesActual, actividadDeBorrador } from '../src/api/formato.js';
+import { ErrorApi, bandaConfort, comandoDeMovil, cuando, etiquetasX, hora12, puntoRocio, relativo, telemetriaWeb, vpd, medicionesActual, actividadDeBorrador, resumenActuadores } from '../src/api/formato.js';
+import { aError } from '../src/api/datos.js';
 
 const AHORA = new Date('2026-11-17T18:00:00Z'); // 12:00 en Ciudad de México
 const hace = (s) => new Date(AHORA - s * 1000).toISOString();
@@ -22,10 +23,12 @@ const FILAS = [
   fila({ codigo: 'SENS-HUM-01', variable: 'humedad_aire', variable_nombre: 'Humedad del aire', unidad: '%', valor: 62, sensor_id: 2, variable_id: 2, min_optimo: 50, max_optimo: 70 }),
   fila({ codigo: 'SENS-LUX-01', variable: 'iluminancia', variable_nombre: 'Iluminancia', unidad: 'lux', valor: 18500, sensor_id: 3, variable_id: 3, tendencia: [18000], min_optimo: null, max_optimo: null, min_critico: null, max_critico: null, evaluacion: 'SIN_UMBRAL' }),
   fila({ codigo: 'SENS-TEMP-S01', variable: 'temperatura_suelo', variable_nombre: 'Temperatura del suelo', valor: 22.1, sensor_id: 4, variable_id: 4 }),
-  fila({ codigo: 'SENS-SOIL-01', variable: 'humedad_suelo', variable_nombre: 'Humedad del suelo', unidad: '%', valor: 60, zona: 1, sensor_id: 5, variable_id: 5, rango_min: 0, rango_max: 100 }),
-  fila({ codigo: 'SENS-SOIL-02', variable: 'humedad_suelo', variable_nombre: 'Humedad del suelo', unidad: '%', valor: 70, zona: 2, sensor_id: 6, variable_id: 5, categoria: 'ALERTA', evaluacion: 'FUERA_DE_OPTIMO', rango_min: 0, rango_max: 100 }),
-  fila({ codigo: 'SENS-SOIL-03', variable: 'humedad_suelo', variable_nombre: 'Humedad del suelo', unidad: '%', valor: 0, valido: false, zona: 3, sensor_id: 7, variable_id: 5, categoria: 'ERROR_HW', evaluacion: 'SIN_DATO_VALIDO' }),
-  fila({ codigo: 'SENS-TANK-01', variable: 'nivel_tanque', variable_nombre: 'Nivel del tanque', unidad: '%', valor: null, valido: null, tomado_en: null, categoria: 'DESCONOCIDO', evaluacion: 'SIN_LECTURA', tendencia: [], sensor_id: 8, variable_id: 6 }),
+  fila({ codigo: 'SENS-SOIL-01', variable: 'humedad_suelo', variable_nombre: 'Humedad del suelo', unidad: '%', valor: 60, zona: 'Zona 1', sensor_id: 5, variable_id: 5, rango_min: 0, rango_max: 100 }),
+  fila({ codigo: 'SENS-SOIL-02', variable: 'humedad_suelo', variable_nombre: 'Humedad del suelo', unidad: '%', valor: 70, zona: 'Zona 2', sensor_id: 6, variable_id: 5, categoria: 'ALERTA', evaluacion: 'FUERA_DE_OPTIMO', rango_min: 0, rango_max: 100 }),
+  fila({ codigo: 'SENS-SOIL-03', variable: 'humedad_suelo', variable_nombre: 'Humedad del suelo', unidad: '%', valor: 0, valido: false, zona: 'Zona 3', sensor_id: 7, variable_id: 5, categoria: 'ERROR_HW', evaluacion: 'SIN_DATO_VALIDO' }),
+  // HC-SR04: dos variables del mismo sensor; la distancia (menor id) no tiene umbral, el nivel sí.
+  fila({ codigo: 'SENS-DIST-01', variable: 'distancia_agua', variable_nombre: 'Distancia al agua', unidad: 'cm', valor: 12, sensor_id: 8, variable_id: 4, zona: 'Tanque principal', min_optimo: null, max_optimo: null, min_critico: null, max_critico: null, evaluacion: 'SIN_UMBRAL' }),
+  fila({ codigo: 'SENS-TANK-01', variable: 'nivel_tanque', variable_nombre: 'Nivel del tanque', unidad: '%', valor: null, valido: null, tomado_en: null, categoria: 'DESCONOCIDO', evaluacion: 'SIN_LECTURA', tendencia: [], sensor_id: 8, variable_id: 6, zona: 'Tanque principal' }),
 ];
 const ACTUADORES = [
   { id: 1, codigo: 'ACT-BOMBA-01', nombre: 'Bomba de riego', tipo: 'BOMBA', encendido: false, valor: 0, actualizado_en: hace(600) },
@@ -59,7 +62,7 @@ const datos = {
   calibrar: async (ctx, codigo, c) => (llamadas.push(['calibrar', codigo, c]), codigo === 'NOPE' ? Promise.reject(new ErrorApi(404, 'x')) : { ok: true }),
   alertas: async () => ({
     abiertas: [{ id: 1, sensor: 'DHT22', sensor_id: 6, estado: 'ALTO', categoria: 'ALERTA', mensaje: 'Humedad alta', accion_sugerida: 'Ventilar', abierta_en: hace(900), ultima_vez_en: hace(60), ocurrencias: 3, reconocida: false }],
-    resueltas: [{ id: 2, sensor_id: 7, estado: 'ERROR', categoria: 'ERROR_HW', mensaje: 'Sensor sin señal', abierta_en: hace(7200), ultima_vez_en: hace(6000), ocurrencias: 1, resuelta_en: hace(3600), reconocida_en: null }],
+    resueltas: [{ id: 2, sensor_id: 8, estado: 'ERROR', categoria: 'ERROR_HW', mensaje: 'Sensor sin señal', abierta_en: hace(7200), ultima_vez_en: hace(6000), ocurrencias: 1, resuelta_en: hace(3600), reconocida_en: null }],
   }),
   actividades: async () => [{ id: 1, tipo: 'RIEGO', cantero: 'c1', programada_en: hace(3600), responsable: { initials: 'CM', name: 'Carlos M.', role: 'Estudiante' }, descripcion: 'Regar el cantero uno', observaciones: null, estado: 'EN_PROCESO', fotos: [] }],
   crearActividad: registrar('crearActividad'),
@@ -181,6 +184,7 @@ describe('rutas móviles', () => {
     assert.equal(tanque.value, '--');
     assert.equal(tanque.online, false);
     assert.equal(json.find((s) => s.id === 'SENS-SOIL-02').status, 'warning');
+    assert.equal(json.find((s) => s.id === 'SENS-SOIL-01').location, 'Zona 1'); // sin "Zona Zona 1"
     assert.equal(json.find((s) => s.id === 'SENS-SOIL-03').status, 'critical');
   });
 
@@ -259,6 +263,8 @@ describe('rutas móviles', () => {
     json.forEach(notificacion);
     assert.equal(json[0].tag, 'ADVERTENCIA • ACTIVA');
     assert.equal(json[0].sensorId, 'SENS-SOIL-02');
+    assert.equal(json[0].title, 'DHT22 • Alto'); // código del estado legible, no crudo
+    assert.equal(json[1].sensorId, 'SENS-TANK-01'); // del HC-SR04 gana la variable con umbral, no SENS-DIST-01
     assert.equal(json[1].kind, 'critica');
     assert.equal(json[1].tag, 'CRÍTICA • RESUELTA');
     assert.equal(json[1].read, true);
@@ -341,8 +347,9 @@ describe('contrato web /api/v1', () => {
     assert.equal(r.status, 200);
     assert.equal(r.json.status, 'success');
     assert.deepEqual(llamadas[0].slice(1), ['SENS-SOIL-01', { aire_crudo: 3140, agua_crudo: 1280, offset: 1.5 }]);
-    assert.equal((await pedir('PUT', '/api/v1/sensors/calibration', { sensor_code: 'X', raw_dry_point: 'a', raw_wet_point: 1 })).status, 400);
-    assert.equal((await pedir('PUT', '/api/v1/sensors/calibration', { sensor_code: 'NOPE', raw_dry_point: 1, raw_wet_point: 2 })).status, 404);
+    for (const [seco, mojado] of [['a', 1], [5000, 1280], [3140.5, 1280], [1280, 3140], [1280, 1280]])
+      assert.equal((await pedir('PUT', '/api/v1/sensors/calibration', { sensor_code: 'SENS-SOIL-01', raw_dry_point: seco, raw_wet_point: mojado })).status, 400, `${seco}/${mojado}`);
+    assert.equal((await pedir('PUT', '/api/v1/sensors/calibration', { sensor_code: 'NOPE', raw_dry_point: 3000, raw_wet_point: 1000 })).status, 404);
   });
 
   test('audit/logs: paginación, filtros y 400', async () => {
@@ -353,8 +360,13 @@ describe('contrato web /api/v1', () => {
     assert.equal(r.json.page, 2);
     assert.equal(r.json.total, 120);
     assert.deepEqual(Object.keys(r.json.data[0]), ['timestamp', 'device', 'event_type', 'parameter_value', 'trigger', 'state']);
-    assert.deepEqual(llamadas[0][1], { device: 'ACT-BOMBA-01', tipo: 'manual', pagina: 2, porPagina: 200 });
-    for (const q of ['severity=x', 'page=0', 'per_page=abc', 'page=1.5'])
+    assert.deepEqual(llamadas[0][1], { device: 'ACT-BOMBA-01', tipos: ['manual'], desde: undefined, hasta: undefined, pagina: 2, porPagina: 200 });
+    llamadas.length = 0;
+    await pedir('GET', '/api/v1/audit/logs?severity=manual,auto,alert&from=2026-11-17T00:00:00Z&to=2026-11-18T00:00:00Z');
+    assert.deepEqual(llamadas[0][1], {
+      device: undefined, tipos: ['manual', 'auto', 'alert'], desde: Date.parse('2026-11-17T00:00:00Z'), hasta: Date.parse('2026-11-18T00:00:00Z'), pagina: 1, porPagina: 50,
+    });
+    for (const q of ['severity=x', 'severity=manual,x', 'severity=', 'page=0', 'per_page=abc', 'page=1.5', 'from=ayer', 'from=2026-11-18&to=2026-11-17'])
       assert.equal((await pedir('GET', '/api/v1/audit/logs?' + q)).status, 400, q);
   });
 });
@@ -390,6 +402,22 @@ describe('formato', () => {
   test('banda de confort sin umbral usa el rango de los datos', () => {
     assert.deepEqual(bandaConfort({ min_optimo: null }, [{ value: 3 }, { value: 9 }]), { min: 3, max: 9 });
     assert.deepEqual(bandaConfort(null, []), { min: 0, max: 0 });
+  });
+
+  test('velocidad del ventilador igual en web y móvil: > 50 % es alta', () => {
+    const nivel = (valor) => resumenActuadores({
+      actuadores: [{ id: 3, codigo: 'V', nombre: 'Extractor', tipo: 'VENTILADOR', encendido: true, valor, actualizado_en: hace(10) }],
+      comandos: [], reglas: [], prediccion: null, temperatura: null, ahora: AHORA.getTime(),
+    }).actuators[0].level;
+    assert.deepEqual([33, 50, 66, 100].map(nivel), ['low', 'low', 'high', 'high']); // web Baja/Media/Alta y móvil low/high
+  });
+
+  test('errores de PostgREST: parámetros -> 400, configuración -> 500 con causa para el log', () => {
+    assert.equal(aError({ code: 'PGRST100', message: 'parse' }).estado, 400);
+    const conf = aError({ code: 'PGRST106', message: 'The schema must be one of the following' });
+    assert.equal(conf.estado, 500);
+    assert.match(conf.causa, /PGRST106/);
+    assert.equal(aError({ code: '42501', message: 'denied' }).estado, 403);
   });
 
   test('comandoDeMovil exige exactamente un campo válido', () => {

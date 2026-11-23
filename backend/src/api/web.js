@@ -48,21 +48,35 @@ export function rutasWeb({ datos, ahora }) {
   r.put('/sensors/calibration', async (req, res) => {
     const { sensor_code: codigo, raw_dry_point: seco, raw_wet_point: mojado, offset_linear: offset = 0 } = obj(req.body);
     if (typeof codigo !== 'string' || !codigo || codigo.length > 40) throw new ErrorApi(400, 'sensor_code inválido');
-    if (!num(seco) || !num(mojado) || !num(offset)) throw new ErrorApi(400, 'raw_dry_point, raw_wet_point y offset_linear deben ser números');
+    if (!entero(seco, 0, 4095) || !entero(mojado, 0, 4095) || !num(offset)) throw new ErrorApi(400, 'raw_dry_point y raw_wet_point deben ser enteros 0–4095 (ADC de 12 bits) y offset_linear un número');
+    if (seco <= mojado) throw new ErrorApi(400, 'raw_dry_point (aire) debe ser mayor que raw_wet_point (agua) en el sensor capacitivo');
     const data = await datos.calibrar(req.ctx, codigo, { aire_crudo: seco, agua_crudo: mojado, offset });
     res.json(ok({ data }));
   });
 
   r.get('/audit/logs', async (req, res) => {
-    const { device_id: device, severity = 'all', page = '1', per_page: pp = '50' } = req.query;
-    if (typeof severity !== 'string' || !SEVERIDADES.includes(severity)) throw new ErrorApi(400, `severity debe ser: ${SEVERIDADES.join(', ')}`);
+    const { device_id: device, severity = 'all', page = '1', per_page: pp = '50', from, to } = req.query;
+    // severity admite varios separados por coma (p. ej. manual,auto,alert) para no ahogarse en telemetría.
+    const tipos = typeof severity === 'string' ? severity.split(',') : [];
+    if (!tipos.length || !tipos.every((t) => SEVERIDADES.includes(t))) throw new ErrorApi(400, `severity debe ser: ${SEVERIDADES.join(', ')} (separados por coma)`);
     if (device !== undefined && (typeof device !== 'string' || device.length > 60)) throw new ErrorApi(400, 'device_id inválido');
+    const fecha = (v, nombre) => {
+      if (v === undefined) return undefined;
+      const t = typeof v === 'string' ? Date.parse(v) : NaN;
+      if (Number.isNaN(t)) throw new ErrorApi(400, `${nombre} debe ser una fecha ISO 8601`);
+      return t;
+    };
+    const desde = fecha(from, 'from');
+    const hasta = fecha(to, 'to');
+    if (desde !== undefined && hasta !== undefined && desde >= hasta) throw new ErrorApi(400, 'from debe ser anterior a to');
     const pagina = Number(page);
     const porPagina = Number(pp);
     if (typeof page !== 'string' || typeof pp !== 'string' || !entero(pagina, 1) || !entero(porPagina, 1)) throw new ErrorApi(400, 'page y per_page deben ser enteros positivos');
     // zone_id se acepta pero no filtra: hay un único invernadero y v_bitacora no tiene zona.
     const lim = Math.min(porPagina, 200);
-    const { filas, total } = await datos.bitacora(req.ctx, { device, tipo: severity === 'all' ? undefined : severity, pagina, porPagina: lim });
+    const { filas, total } = await datos.bitacora(req.ctx, {
+      device, tipos: tipos.includes('all') ? undefined : tipos, desde, hasta, pagina, porPagina: lim,
+    });
     res.json(ok({ page: pagina, per_page: lim, total, data: filas.map(filaBitacora) }));
   });
 

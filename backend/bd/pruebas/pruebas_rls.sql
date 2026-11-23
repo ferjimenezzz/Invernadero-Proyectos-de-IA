@@ -77,6 +77,7 @@ DO $do$
 BEGIN
     ASSERT (SELECT count(*) FROM inv.v_ultima_medicion) = 9, 'LECTOR debe leer el tablero';
     ASSERT (SELECT count(*) FROM inv.v_bitacora) > 0, 'LECTOR debe leer la bitácora';
+    ASSERT (SELECT codigo FROM inv.v_alertas_activas) = 'SENS-SOIL-03', 'LECTOR debe leer v_alertas_activas con su código';
     ASSERT (SELECT rol FROM inv.usuario WHERE id = inv.fn_usuario_actual()) = 'LECTOR', 'LECTOR lee su perfil sin correo';
     ASSERT inv.fn_rol_actual() = 'LECTOR', 'fn_rol_actual';
     ASSERT (SELECT lecturas FROM inv.fn_estadistica('SENS-SOIL-03', '2026-11-01', '2026-11-02')) = 1, 'LECTOR usa fn_estadistica';
@@ -104,6 +105,8 @@ BEGIN
     -- comando manual: usuario_id lo pone el DEFAULT
     PERFORM pg_temp.filas($$INSERT INTO inv.comando_actuador (actuador_id, accion, valor, origen)
                             VALUES ((SELECT min(id) FROM inv.actuador), 'ENCENDER', 50, 'MANUAL')$$);
+    ASSERT (SELECT duracion_s FROM inv.comando_actuador WHERE valor = 50) = 10,
+           'el riego manual del OPERADOR debía tomar la duración de la regla';
     PERFORM pg_temp.espera_error('42501', $$INSERT INTO inv.comando_actuador (actuador_id, accion, origen)
                                            VALUES ((SELECT min(id) FROM inv.actuador), 'ENCENDER', 'IA')$$);
     PERFORM pg_temp.espera_error('42501', format($$INSERT INTO inv.comando_actuador (actuador_id, accion, origen, usuario_id)

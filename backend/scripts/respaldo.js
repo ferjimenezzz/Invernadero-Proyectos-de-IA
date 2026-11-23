@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { env } from '../src/supabase.js';
+import { sinClave } from './psql.js';
 
 const RAIZ = fileURLToPath(new URL('..', import.meta.url));
 const { values: a } = parseArgs({ options: { origen: { type: 'string', default: 'supabase' } } });
@@ -14,13 +15,15 @@ if (!['supabase', 'local'].includes(a.origen)) throw new Error('--origen debe se
 const bin = (n) => join(env('PG_BIN', 'C:/Program Files/PostgreSQL/18/bin'), n);
 const conUrl = (url, bd) => { const u = new URL(url); if (bd) u.pathname = `/${bd}`; return u.toString(); };
 
-// Los errores de execFileSync traen los argumentos (con la contraseña): se reemplazan por un mensaje limpio.
-function correr(herramienta, args, { salida = false } = {}) {
+// La contraseña viaja en PGPASSWORD (sinClave), nunca en los argumentos; el error solo muestra stderr.
+function correr(herramienta, url, args) {
+  const c = sinClave(url);
   try {
-    return execFileSync(bin(herramienta), args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    return execFileSync(bin(herramienta), ['-d', c.url, ...args], {
+      encoding: 'utf8', env: c.env, stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim();
   } catch (e) {
-    const detalle = String(e.stderr || '').split('\n').filter((l) => !l.includes('://')).join('\n').trim();
-    throw new Error(`${herramienta} falló:\n${detalle}`);
+    throw new Error(`${herramienta} falló:\n${String(e.stderr || e.message).trim()}`);
   }
 }
 
@@ -29,11 +32,11 @@ const urlOrigen = a.origen === 'local' ? conUrl(urlLocal, 'invernadero_test') : 
 const urlRestore = conUrl(urlLocal, 'invernadero_restore');
 const urlAdmin = conUrl(urlLocal, 'postgres');
 
-const sql = (url, consulta) => correr('psql', [url, '-X', '-tA', '-v', 'ON_ERROR_STOP=1', '-c', consulta]);
-const archivo = (url, ruta) => correr('psql', [url, '-X', '-q', '-v', 'ON_ERROR_STOP=1', '-f', ruta]);
+const sql = (url, consulta) => correr('psql', url, ['-X', '-tA', '-v', 'ON_ERROR_STOP=1', '-c', consulta]);
+const archivo = (url, ruta) => correr('psql', url, ['-X', '-q', '-v', 'ON_ERROR_STOP=1', '-f', ruta]);
 
 function conteos(url) {
-  const tablas = sql(url, "select tablename from pg_tables where schemaname='inv' order by 1").split('\n').filter(Boolean);
+  const tablas = sql(url, "select tablename from pg_tables where schemaname='inv' order by 1").split(/\r?\n/).filter(Boolean); // psql en Windows usa CRLF
   const res = {};
   for (const t of tablas) res[t] = Number(sql(url, `select count(*) from inv."${t}"`));
   return res;
@@ -45,7 +48,7 @@ const p = (n) => String(n).padStart(2, '0');
 const dir = join(RAIZ, 'backups');
 mkdirSync(dir, { recursive: true });
 const dump = join(dir, `inv_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.sql`);
-correr('pg_dump', [urlOrigen, '-n', 'inv', '--no-owner', '--no-privileges', '-f', dump]);
+correr('pg_dump', urlOrigen, ['-n', 'inv', '--no-owner', '--no-privileges', '-f', dump]);
 console.log(`Respaldo creado: ${dump}`);
 
 // 2) BD de restauración limpia

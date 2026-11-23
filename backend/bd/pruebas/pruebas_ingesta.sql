@@ -143,6 +143,14 @@ BEGIN
     ASSERT (SELECT array_agg(estado::text ORDER BY estado) FROM inv.v_alertas_activas)
          = ARRAY['ERROR_DHT','ERROR_DS18B20_DESCONECTADO','LECTURA_FUERA_DE_RANGO','SOMBRA_EXCESIVA'],
            'alertas activas inesperadas tras el paquete 3';
+    -- código principal del sensor: la variable con umbral primero (tanque → TANK), si no la de menor id (DHT22 → ENV)
+    ASSERT (SELECT array_agg(codigo || ':' || estado ORDER BY codigo) FROM inv.v_alertas_activas)
+         = ARRAY['SENS-ENV-01:ERROR_DHT','SENS-LUX-01:SOMBRA_EXCESIVA',
+                 'SENS-TANK-01:LECTURA_FUERA_DE_RANGO','SENS-TEMP-S01:ERROR_DS18B20_DESCONECTADO'],
+           'v_alertas_activas.codigo no sigue la regla del código principal';
+    ASSERT (SELECT column_name FROM information_schema.columns
+             WHERE table_schema = 'inv' AND table_name = 'v_alertas_activas'
+             ORDER BY ordinal_position DESC LIMIT 1) = 'codigo', 'codigo debe ser la última columna de v_alertas_activas';
 END $$;
 
 -- 4) Nodo que no está registrado → se guarda pero no se procesa
@@ -244,7 +252,36 @@ BEGIN
            'v_bitacora: disparador manual';
     ASSERT (SELECT dispositivo FROM inv.v_bitacora WHERE tipo = 'alert' AND detalle LIKE 'Humedad suelo 3%') = 'SENS-SOIL-03',
            'v_bitacora: dispositivo de la alerta';
+    ASSERT (SELECT dispositivo FROM inv.v_bitacora WHERE tipo = 'alert' AND detalle LIKE 'Tanque de agua%') = 'SENS-TANK-01',
+           'v_bitacora: la alerta del tanque debía ser SENS-TANK-01';
+    ASSERT (SELECT dispositivo FROM inv.v_bitacora WHERE tipo = 'alert' AND detalle LIKE 'Ambiente%') = 'SENS-ENV-01',
+           'v_bitacora: la alerta del DHT22 debía ser SENS-ENV-01';
     ASSERT (SELECT count(*) FROM inv.v_bitacora WHERE tipo = 'telemetry') = 7, 'v_bitacora: 1 fila por paquete';
+END $$;
+
+-- Riego manual sin duración: toma la de la regla ENCENDER activa del actuador (menor prioridad, luego id)
+DO $$
+DECLARE b smallint := (SELECT id FROM inv.actuador WHERE codigo = 'bomba_riego');
+        d integer;
+BEGIN
+    ASSERT (SELECT duracion_s FROM inv.comando_actuador WHERE valor = 60) = 10,
+           'el ENCENDER manual sin duración debía tomar los 10 s de la regla de riego';
+    INSERT INTO inv.comando_actuador (actuador_id, accion, duracion_s, origen) VALUES (b, 'ENCENDER', 30, 'MANUAL')
+    RETURNING duracion_s INTO d;
+    ASSERT d = 30, 'una duración explícita no se debe cambiar';
+    INSERT INTO inv.comando_actuador (actuador_id, accion, origen) VALUES (b, 'APAGAR', 'MANUAL') RETURNING duracion_s INTO d;
+    ASSERT d IS NULL, 'APAGAR no lleva duración';
+    INSERT INTO inv.comando_actuador (actuador_id, accion, origen) VALUES (b, 'ENCENDER', 'IA') RETURNING duracion_s INTO d;
+    ASSERT d IS NULL, 'solo los comandos MANUAL toman la duración de la regla';
+
+    INSERT INTO inv.regla_automatizacion (nombre, estado_disparador, actuador_id, accion, duracion_s, prioridad)
+    VALUES ('Riego corto de prueba', 'SOMBRA_EXCESIVA', b, 'ENCENDER', 20, 5);
+    INSERT INTO inv.comando_actuador (actuador_id, accion, origen) VALUES (b, 'ENCENDER', 'MANUAL') RETURNING duracion_s INTO d;
+    ASSERT d = 20, 'debía ganar la regla de menor prioridad';
+
+    UPDATE inv.regla_automatizacion SET activa = false WHERE accion = 'ENCENDER';
+    INSERT INTO inv.comando_actuador (actuador_id, accion, origen) VALUES (b, 'ENCENDER', 'MANUAL') RETURNING duracion_s INTO d;
+    ASSERT d IS NULL, 'sin regla activa la duración queda NULL';
 END $$;
 
 -- Retención: purga el JSON crudo pero conserva las lecturas

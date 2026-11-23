@@ -487,6 +487,23 @@ CREATE FUNCTION inv.fn_codigo_dispositivo(p_prefijo text, p_indice integer) RETU
 LANGUAGE sql IMMUTABLE PARALLEL SAFE
 AS $$ SELECT 'SENS-' || p_prefijo || lpad(p_indice::text, 2, '0') $$;
 
+-- Código "principal" de un sensor físico (para sus alertas): primero la variable que tiene
+-- umbral para el cultivo del invernadero, luego la de menor id. HC-SR04 → SENS-TANK-01, DHT22 → SENS-ENV-01.
+CREATE FUNCTION inv.fn_codigo_sensor(p_sensor_id integer) RETURNS text
+LANGUAGE sql STABLE
+AS $$
+    SELECT inv.fn_codigo_dispositivo(v.prefijo_dispositivo, s.indice)
+      FROM inv.sensor s
+      JOIN inv.nodo n                  ON n.id = s.nodo_id
+      JOIN inv.invernadero i           ON i.id = n.invernadero_id
+      JOIN inv.tipo_sensor_variable tv ON tv.tipo_sensor_id = s.tipo_sensor_id
+      JOIN inv.variable v              ON v.id = tv.variable_id
+      LEFT JOIN inv.umbral um          ON um.cultivo_id = i.cultivo_id AND um.variable_id = v.id
+     WHERE s.id = p_sensor_id
+     ORDER BY um.id IS NULL, v.id
+     LIMIT 1
+$$;
+
 -- Saca un número de un objeto JSON probando varias llaves (acepta número o texto numérico).
 CREATE FUNCTION inv._num(p_obj jsonb, VARIADIC p_claves text[])
 RETURNS numeric
@@ -848,6 +865,26 @@ CREATE TRIGGER tr_comando_confirmado AFTER UPDATE OF estado ON inv.comando_actua
     FOR EACH ROW WHEN (NEW.estado = 'CONFIRMADO' AND OLD.estado IS DISTINCT FROM 'CONFIRMADO')
     EXECUTE FUNCTION inv.tg_comando_confirmado();
 
+-- Un riego manual sin duración podría dejar la bomba encendida: se toma la duración de la
+-- regla ENCENDER activa del mismo actuador (la definió el equipo, no se inventa); sin regla queda NULL.
+CREATE FUNCTION inv.tg_comando_duracion() RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = inv, pg_temp
+AS $$
+BEGIN
+    SELECT r.duracion_s INTO NEW.duracion_s
+      FROM inv.regla_automatizacion r
+     WHERE r.actuador_id = NEW.actuador_id
+       AND r.activa AND r.accion = 'ENCENDER' AND r.duracion_s IS NOT NULL
+     ORDER BY r.prioridad, r.id
+     LIMIT 1;
+    RETURN NEW;
+END $$;
+
+CREATE TRIGGER tr_comando_duracion BEFORE INSERT ON inv.comando_actuador
+    FOR EACH ROW WHEN (NEW.origen = 'MANUAL' AND NEW.accion = 'ENCENDER' AND NEW.duracion_s IS NULL)
+    EXECUTE FUNCTION inv.tg_comando_duracion();
+
 -- =============================================================================
 -- 7. VISTAS (los nombres de columna son contrato con el adaptador REST)
 -- =============================================================================
@@ -929,7 +966,8 @@ SELECT a.id,
        a.abierta_en,
        a.ultima_vez_en,
        a.ocurrencias,
-       (a.reconocida_en IS NOT NULL) AS reconocida
+       (a.reconocida_en IS NOT NULL) AS reconocida,
+       inv.fn_codigo_sensor(a.sensor_id) AS codigo
   FROM inv.alerta a
   JOIN inv.nodo n          ON n.id = a.nodo_id
   JOIN inv.sensor s        ON s.id = a.sensor_id
@@ -1012,11 +1050,7 @@ SELECT c.creado_en,
 UNION ALL
 SELECT al.abierta_en,
        'alert',
-       coalesce((SELECT inv.fn_codigo_dispositivo(v.prefijo_dispositivo, s.indice)
-                   FROM inv.tipo_sensor_variable tv
-                   JOIN inv.variable v ON v.id = tv.variable_id
-                  WHERE tv.tipo_sensor_id = s.tipo_sensor_id
-                  ORDER BY v.id LIMIT 1), s.nombre::text),
+       coalesce(inv.fn_codigo_sensor(al.sensor_id), s.nombre::text),
        coalesce(al.mensaje, al.estado)::text,
        'ESP32',
        CASE WHEN al.resuelta_en IS NOT NULL THEN 'RESUELTA'

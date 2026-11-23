@@ -5,7 +5,7 @@
   "description": "BD y backend del invernadero de albahaca: suscriptor MQTT, adaptador REST para las apps y scripts de Supabase",
   "type": "module",
   "engines": {
-    "node": ">=20.12"
+    "node": ">=22"
   },
   "scripts": {
     "start": "node src/index.js",
