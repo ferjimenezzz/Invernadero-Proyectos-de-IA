@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
 const CLAVE = randomUUID();
 import { crearApp } from '../src/api/app.js';
 import { ErrorApi, bandaConfort, comandoDeMovil, cuando, etiquetasX, hora12, puntoRocio, relativo, telemetriaWeb, vpd, medicionesActual, actividadDeBorrador, resumenActuadores } from '../src/api/formato.js';
-import { aError } from '../src/api/datos.js';
+import { aError, filtrosBitacora } from '../src/api/datos.js';
 
 const AHORA = new Date('2026-11-17T18:00:00Z'); // 12:00 en Ciudad de México
 const hace = (s) => new Date(AHORA - s * 1000).toISOString();
@@ -410,6 +410,20 @@ describe('formato', () => {
       comandos: [], reglas: [], prediccion: null, temperatura: null, ahora: AHORA.getTime(),
     }).actuators[0].level;
     assert.deepEqual([33, 50, 66, 100].map(nivel), ['low', 'low', 'high', 'high']); // web Baja/Media/Alta y móvil low/high
+  });
+
+  test('bitácora: filtros y página sobre el query builder real de supabase-js (sin red)', () => {
+    const pasos = [];
+    const builder = new Proxy({}, { get: (_, m) => (...a) => (pasos.push([m, ...a]), builder) });
+    filtrosBitacora(builder, { device: 'bomba_riego', tipos: ['manual', 'alert'], desde: Date.parse('2026-11-17T00:00:00Z'), hasta: Date.parse('2026-11-18T00:00:00Z'), pagina: 3, porPagina: 50 });
+    assert.deepEqual(pasos, [
+      ['eq', 'dispositivo', 'bomba_riego'], ['in', 'tipo', ['manual', 'alert']],
+      ['gte', 'ocurrido_en', '2026-11-17T00:00:00.000Z'], ['lt', 'ocurrido_en', '2026-11-18T00:00:00.000Z'],
+      ['order', 'ocurrido_en', { ascending: false }], ['range', 100, 149],
+    ]);
+    pasos.length = 0;
+    filtrosBitacora(builder, { pagina: 1, porPagina: 50 }); // sin filtros: solo orden y página
+    assert.deepEqual(pasos.map((p) => p[0]), ['order', 'range']);
   });
 
   test('errores de PostgREST: parámetros -> 400, configuración -> 500 con causa para el log', () => {

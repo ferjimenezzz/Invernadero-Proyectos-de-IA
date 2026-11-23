@@ -45,6 +45,16 @@ async function q(ctx, f, conCuenta = false) {
 
 const iso = (d) => new Date(d).toISOString();
 
+/** Filtros y página de /api/v1/audit/logs sobre un query builder de supabase-js (exportada para probarla sin red). */
+export function filtrosBitacora(s, { device, tipos, desde, hasta, pagina, porPagina }) {
+  if (device) s = s.eq('dispositivo', device);
+  if (tipos) s = s.in('tipo', tipos);
+  if (desde) s = s.gte('ocurrido_en', iso(desde));
+  if (hasta) s = s.lt('ocurrido_en', iso(hasta));
+  const inicio = (pagina - 1) * porPagina;
+  return s.order('ocurrido_en', { ascending: false }).range(inicio, inicio + porPagina - 1);
+}
+
 export function crearDatos() {
   return {
     async login(email, password) {
@@ -125,16 +135,8 @@ export function crearDatos() {
 
     crearActividad: (ctx, fila) => q(ctx, (c) => c.from('actividad').insert(fila)),
 
-    async bitacora(ctx, { device, tipos, desde, hasta, pagina, porPagina }) {
-      const r = await q(ctx, (c) => {
-        let s = c.from('v_bitacora').select('*', { count: 'exact' });
-        if (device) s = s.eq('dispositivo', device);
-        if (tipos) s = s.in('tipo', tipos);
-        if (desde) s = s.gte('ocurrido_en', iso(desde));
-        if (hasta) s = s.lt('ocurrido_en', iso(hasta));
-        const desde = (pagina - 1) * porPagina;
-        return s.order('ocurrido_en', { ascending: false }).range(desde, desde + porPagina - 1);
-      }, true);
+    async bitacora(ctx, filtros) {
+      const r = await q(ctx, (c) => filtrosBitacora(c.from('v_bitacora').select('*', { count: 'exact' }), filtros), true);
       return { filas: r.data, total: r.count ?? r.data.length };
     },
   };

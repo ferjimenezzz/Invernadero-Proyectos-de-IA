@@ -19,7 +19,7 @@
 | `app web/` | ferjimenezzz (10–12 nov) | 7 páginas PHP, `assets/js/app.js`, `config/api-contracts.php` | **Maqueta total.** No hace ni una llamada de red. `api-contracts.php` no lo carga ninguna página. El login es falso: los formularios hacen GET a `dashboard.php`. |
 | `app móvil/` | jimelino (16 nov) | Expo + TypeScript, 11 pantallas, `src/services/api.ts` | UI completa. Llama a la API solo si existe `EXPO_PUBLIC_API_URL`, y aun así mucha información sigue siendo mock (§2.2). |
 | `sensores/` | ferjimenezzz | `hola, sensores` (vacío) | No hay firmware. |
-| `backend/` | equipo BD y Backend | SQL con RLS, suscriptor MQTT, adaptador Express, scripts y pruebas | Código real. 33 pruebas unitarias en verde con datos falsos. **Nunca se ha corrido contra PostgreSQL ni Supabase.** |
+| `backend/` | equipo BD y Backend | SQL con RLS, suscriptor MQTT, adaptador Express, scripts y pruebas | Código real. El SQL pasó sus pruebas en un PostgreSQL 18 temporal y la restauración del respaldo coincide (22 nov); 38 pruebas unitarias en verde. **Nunca se ha corrido contra Supabase.** |
 
 **Lo que falta de los otros equipos:**
 - **Hardware:**
