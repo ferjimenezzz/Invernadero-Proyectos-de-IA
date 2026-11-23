@@ -1,6 +1,6 @@
 # Recorrido de extremo a extremo: MQTT → BD → API
 
-> **PENDIENTE DE EJECUTAR: requiere el proyecto Supabase.** Este documento es el procedimiento; no contiene resultados. Las salidas "esperadas" se derivan del código y de las pruebas SQL; deben compararse con lo que salga de verdad y registrarse en [`casos_prueba.md`](casos_prueba.md) (CP-P04 a CP-P08).
+> **Ejecutado en parte el 23 nov 2026** contra el proyecto Supabase del equipo y con el **broker local**: resultados en [`evidencias/2026-11-23_supabase.md`](evidencias/2026-11-23_supabase.md). Falta correrlo con el broker de Conectividad y el ESP32, y la reconexión del paso 7. Este documento es el procedimiento; no contiene resultados. Las salidas "esperadas" se derivan del código y de las pruebas SQL; deben compararse con lo que salga de verdad y registrarse en [`casos_prueba.md`](casos_prueba.md) (CP-P04 a CP-P08).
 
 Objetivo (hito H4/H6): demostrar que ≥ 10 mensajes válidos consecutivos llegan a la base con sensor, valor y hora correctos; que un mensaje inválido **no** se guarda como lectura válida y deja su error; y que la API devuelve esos datos.
 

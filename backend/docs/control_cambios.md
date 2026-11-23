@@ -4,7 +4,7 @@ El modelo de datos se congeló en el hito **H2** con el esquema `bd/invernadero_
 
 - **Fechas de los cambios:** 17 y 22 de noviembre de 2026.
 - **Estado de aprobación de todos los cambios: pendiente de revisión del equipo.** Ninguno ha sido aprobado formalmente; se aplicaron para que el modelo cumpla lo que piden las apps del repositorio, Supabase y los criterios de seguridad.
-- Resultado: 18 tablas y 6 vistas. El esquema corre completo y pasa sus pruebas en un PostgreSQL 18 temporal (ver [`casos_prueba.md`](casos_prueba.md)); no se ha corrido en un proyecto Supabase.
+- Resultado: 18 tablas y 6 vistas. El esquema corre completo y pasa sus pruebas en un PostgreSQL 18 temporal (ver [`casos_prueba.md`](casos_prueba.md)). El 23 nov se instaló sin errores en el proyecto Supabase del equipo.
 
 ## 1. Cambios al esquema (`invernadero_bd.sql`)
 

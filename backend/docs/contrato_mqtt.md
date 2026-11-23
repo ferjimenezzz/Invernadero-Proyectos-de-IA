@@ -2,7 +2,7 @@
 
 Acuerdo entre Hardware e IoT (firmware del ESP32), Conectividad (broker) y BD y Backend (suscriptor). Describe **lo que el código de este repositorio ya hace**; los puntos que dependen de otro equipo están marcados como **pendientes**.
 
-> Estado: el suscriptor y la función de ingesta están probados con mensajes simulados (`npm test`, `npm run test:bd`). No se ha probado con el broker real de Conectividad ni con el ESP32. El contrato todavía no está firmado por escrito con esos equipos (actividad A del plan).
+> Estado (23 nov 2026): el suscriptor y la función de ingesta están probados con mensajes simulados (`npm test`, `npm run test:bd`) y, contra Supabase, con el broker local (ver [`evidencias/2026-11-23_supabase.md`](evidencias/2026-11-23_supabase.md)). El suscriptor ya se conecta al broker de Conectividad, pero todavía no recibe telemetría: falta el topic y que el ESP32 publique. El contrato todavía no está firmado por escrito con esos equipos (actividad A del plan).
 
 ## 1. Topics y QoS
 
@@ -15,14 +15,16 @@ Acuerdo entre Hardware e IoT (firmware del ESP32), Conectividad (broker) y BD y 
 - El suscriptor usa `clean: true`, reconexión cada 2 s y un `clientId` único por proceso (`suscriptor_bd_<pid>_<aleatorio>`).
 - Se suscribe a **un solo topic exacto** (sin comodines). Un segundo nodo con otro topic requiere cambiar la variable o ampliar el código.
 
-## 2. Variables del broker (pendientes de Conectividad)
+## 2. Variables del broker
 
 | Variable | Valor por omisión | Estado |
 |---|---|---|
-| `MQTT_URL` | `mqtt://localhost:1883` | Host y puerto del broker real: **pendiente** |
-| `MQTT_USERNAME` | (vacío = sin autenticación) | **Pendiente** |
-| `MQTT_PASSWORD` | (vacío) | **Pendiente** |
-| `MQTT_TOPIC_TELEMETRIA` | `invernadero/albahaca_01/telemetria` | Confirmar |
+| `MQTT_URL` | `mqtt://localhost:1883` | Conectividad entregó un broker **EMQX Cloud** con TLS: `mqtts://<host>:8883` (el host va solo en `.env`). Conexión probada el 23 nov |
+| `MQTT_USERNAME` | (vacío = sin autenticación) | Entregado por Conectividad (usuario del suscriptor); va solo en `.env` |
+| `MQTT_PASSWORD` | (vacío) | Entregado por Conectividad; va solo en `.env` |
+| `MQTT_TOPIC_TELEMETRIA` | `invernadero/albahaca_01/telemetria` | **Pendiente de Conectividad.** En su broker se vio `invernadero/albahaca/invernadero_albahaca_01/estado` (mensaje retenido `OFFLINE`), así que su telemetría probablemente sigue ese patrón y no el nuestro. No se adivina: hay que confirmarlo |
+
+El broker no permite suscribirse a `#`. El suscriptor se suscribe a un solo topic exacto, así que basta con que la ACL le permita ese topic.
 | `BUFFER_PATH` | `./buffer/pendientes.jsonl` (relativo a `backend/`) | Propio del suscriptor |
 
 Para pruebas sin hardware, `npm run broker` levanta un broker local (aedes) en el puerto de `MQTT_URL`.
@@ -156,7 +158,7 @@ Tabla `inv.estado_sensor` (datos iniciales). La categoría decide qué pasa: `NO
 | `ERROR_DHT` | ERROR_HW | DHT22 sin respuesta |
 | `NO_DETECTADO` | ERROR_HW | BH1750 sin respuesta en I2C |
 | `ERROR_BH1750` | ERROR_HW | Falla del BH1750 |
-| `SOMBRA_EXCESIVA` | ALERTA | Luz menor a 2 000 lx |
+| `SOMBRA_EXCESIVA` | ALERTA | Luz menor a 2 000 lx. **Ojo:** en el documento del ESP32 (sección 6) esta cadena aparece dañada (`"SOM…_EXCESIVA"` con caracteres de otro alfabeto). Si el firmware la manda así, llega como estado DESCONOCIDO y no abre su alerta: Hardware debe corregirla |
 | `ILUMINACION_ADECUADA` | NORMAL | Luz entre 2 000 y 15 000 lx |
 | `SOL_DIRECTO_EXTREMO` | ALERTA | Luz mayor a 15 000 lx |
 | `TEMPERATURA_OPTIMA` | NORMAL | Raíz entre 15 y 28 °C |

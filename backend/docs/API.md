@@ -5,7 +5,7 @@ Hay dos formas de llegar a los datos, ambas sobre el mismo esquema `inv`:
 - **Parte A · Adaptador REST (Express, puerto 3000).** Lo usan la app móvil y la app web. Habla los contratos de esas apps.
 - **Parte B · PostgREST de Supabase.** Lo usan Automatización, Conectividad y Hardware directamente contra el proyecto Supabase.
 
-> Estado: las rutas de la Parte A están probadas con datos falsos (`npm test`). **Ninguna se ha probado todavía contra un proyecto Supabase**, y la Parte B se escribió leyendo `bd/supabase.sql`; los códigos HTTP de PostgREST son los de su documentación, sin verificar contra el proyecto real. Ver [`casos_prueba.md`](casos_prueba.md).
+> Estado (23 nov 2026): las rutas de la Parte A están probadas con datos falsos (`npm test`) y las principales (`/`, `/dispositivos`, `/mediciones/actual`, `/alertas`, `/api/v1/telemetry/live`) respondieron 200 contra el proyecto Supabase real. De la Parte B se verificaron contra Supabase la consulta de `v_lectura` y los códigos de error de §B.7, salvo el 409. Ver [`casos_prueba.md`](casos_prueba.md) y [`evidencias/2026-11-23_supabase.md`](evidencias/2026-11-23_supabase.md).
 
 Convenciones: las fechas van en ISO 8601 (UTC en la base; las respuestas de la app móvil ya traen texto en America/Mexico_City). Los ejemplos de respuesta son cortos y ilustrativos, construidos a partir de los mapeadores de `src/api/formato.js`.
 
