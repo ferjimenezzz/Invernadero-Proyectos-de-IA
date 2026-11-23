@@ -4,7 +4,7 @@
 
 **Base analizada:**
 - `origin/main` en el commit `4c1124d`. No ha cambiado desde el 16 nov y no hay PRs, issues, forks ni otras ramas.
-- Nuestro trabajo está en la rama local `backend-bd`, que todavía no se sube.
+- Nuestro trabajo estaba en la rama `backend-bd`; se fusionó a `main` con el PR #1 el 23 nov.
 
 **Método:**
 - Se leyó completo `app web/` y `app móvil/`.

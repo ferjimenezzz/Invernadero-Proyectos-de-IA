@@ -2,7 +2,7 @@
 
 Equipo **Base de datos y Backend**. Invernadero inteligente de albahaca de 1.00 × 0.60 m. Este directorio contiene la base de datos (esquema `inv` de PostgreSQL/Supabase), el suscriptor MQTT, el adaptador REST que consumen las apps y los scripts de operación.
 
-> **Estado (22 nov 2026).** Todavía **no** se ha conectado a un proyecto Supabase. Lo probado hasta hoy es el SQL en un PostgreSQL 18 temporal, la restauración local del respaldo y las pruebas unitarias (`npm test`). Todo lo que necesita Supabase, el broker o el ESP32 está marcado como PENDIENTE en [`docs/casos_prueba.md`](docs/casos_prueba.md).
+> **Estado (23 nov 2026).** El esquema ya está instalado en el proyecto Supabase del equipo, con `inv` expuesto, el registro público cerrado y las 5 cuentas de equipo. Contra Supabase se probaron el flujo MQTT → BD con el broker local y 15 mensajes simulados, la consulta de lecturas conocidas, los códigos HTTP de PostgREST y las rutas principales del adaptador (evidencia en [`docs/evidencias/2026-11-23_supabase.md`](docs/evidencias/2026-11-23_supabase.md)). Falta el respaldo desde Supabase, la prueba con el broker de Conectividad (falta el topic de telemetría) y con el ESP32. El detalle está en [`docs/casos_prueba.md`](docs/casos_prueba.md).
 
 ## Qué hay aquí
 
@@ -17,7 +17,7 @@ backend/
 │   ├── supabase.js               Carga .env y crea los clientes de Supabase (esquema inv)
 │   ├── index.js                  Arranca suscriptor y API en un solo proceso
 │   └── api/                      Adaptador Express (puerto 3000): rutas de la app móvil y /api/v1 de la web
-├── scripts/                      broker, simular, usuarios, respaldo, psql, diccionario
+├── scripts/                      broker, simular, usuarios, respaldo, psql, diccionario, configurar_supabase
 ├── test/                         Pruebas unitarias (node --test), sin red ni base de datos
 ├── docs/                         Documentación (ver abajo)
 ├── .env.example                  Variables de entorno (copiar a .env; .env nunca se sube)
@@ -50,9 +50,9 @@ El adaptador Express es la única pieza fuera del plan original ("sin Express sa
 
 ## Puesta en marcha
 
-Todos los comandos se corren desde `backend/`.
+Todos los comandos se corren desde `backend/`. La versión detallada, con qué copiar de cada pantalla y una comprobación por paso, está en [`docs/guia_supabase.md`](docs/guia_supabase.md).
 
-1. **Crear el proyecto Supabase** (plan Free) y anotar, en *Project Settings → API*, la URL del proyecto, la llave `anon` (o *publishable*) y la `service_role` (o *secret*). En *Connect* copiar la cadena **Session pooler** (lleva la contraseña de la BD).
+1. **Crear el proyecto Supabase** (plan Free). *Atajo:* con un token personal en `.env`, `node scripts/configurar_supabase.js` llena el `.env` del paso 2, expone `inv` y cierra el registro (ver la guía). A mano: anotar, en *Project Settings → API*, la URL del proyecto, la llave `anon` (o *publishable*) y la `service_role` (o *secret*). En *Connect* copiar la cadena **Session pooler** (lleva la contraseña de la BD).
 2. **Configurar el entorno.**
    ```
    copy .env.example .env      (en bash: cp .env.example .env)
@@ -158,6 +158,7 @@ El script: (1) hace `pg_dump -n inv` a `backups/inv_AAAAMMDD_HHMM.sql`; (2) recr
 
 | Documento | Contenido |
 |---|---|
+| [`docs/guia_supabase.md`](docs/guia_supabase.md) | Crear el proyecto Supabase del equipo y conectarlo, paso a paso |
 | [`docs/API.md`](docs/API.md) | Adaptador REST (rutas móvil y `/api/v1`) y PostgREST directo, permisos por rol, errores, Realtime, códigos de dispositivo |
 | [`docs/contrato_mqtt.md`](docs/contrato_mqtt.md) | Topics, JSON aceptado, validación, búfer sin conexión, estados del firmware, flujo de comandos |
 | [`docs/modelo_er.md`](docs/modelo_er.md) | Diagrama entidad-relación, equivalencias con E1 y semántica de datos ausentes |
