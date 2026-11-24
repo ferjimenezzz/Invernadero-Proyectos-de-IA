@@ -117,7 +117,7 @@ BEGIN
            'OPERADOR debe reconocer alertas';
     ASSERT (SELECT reconocida FROM inv.v_alertas_activas LIMIT 1), 'la alerta debía quedar reconocida';
     ASSERT pg_temp.filas('UPDATE inv.umbral SET fuente = $q$Ajuste operador$q$') = 4, 'OPERADOR debe cambiar umbrales';
-    ASSERT pg_temp.filas($$UPDATE inv.actuador SET modo = 'MANUAL'$$) = 1, 'OPERADOR debe cambiar el modo';
+    ASSERT pg_temp.filas($$UPDATE inv.actuador SET modo = 'MANUAL'$$) = (SELECT count(*) FROM inv.actuador), 'OPERADOR debe cambiar el modo';
     PERFORM pg_temp.filas($$INSERT INTO inv.actividad (tipo, cantero, programada_en, responsable, descripcion)
                             VALUES ('RIEGO', 'C1', now(), '{"initials":"OP","name":"Operador","role":"Op"}', 'Riego del cantero 1')$$);
     ASSERT (SELECT creado_por FROM inv.actividad) = yo, 'actividad.creado_por debía ser el usuario actual';
@@ -129,7 +129,7 @@ BEGIN
                                            VALUES ('x', 'OK', (SELECT min(id) FROM inv.actuador), 'APAGAR')$$);
     ASSERT inv.fn_calibrar_sensor('SENS-SOIL-01', '{"aire_crudo": 2500}') ->> 'aire_crudo' = '2500', 'OPERADOR debe calibrar';
     PERFORM pg_temp.espera_error('P0002', $$SELECT inv.fn_calibrar_sensor('SENS-NO-99', '{"a": 1}')$$);
-    ASSERT inv.fn_detener_todo('Paro operador') = 1, 'OPERADOR debe poder hacer paro general';
+    ASSERT inv.fn_detener_todo('Paro operador') = (SELECT count(*) FROM inv.actuador), 'OPERADOR debe poder hacer paro general';
 END $do$;
 
 -- ---------------------------- AUTOMATIZACION ---------------------------------
@@ -142,7 +142,7 @@ BEGIN
                             VALUES ((SELECT min(id) FROM inv.actuador), 'APAGAR', 'IA')$$);
     ASSERT pg_temp.filas($$UPDATE inv.comando_actuador SET estado = 'CANCELADO' WHERE origen = 'IA'$$) = 1,
            'AUTOMATIZACION debe actualizar el estado de comandos';
-    ASSERT pg_temp.filas($$UPDATE inv.actuador SET encendido = false, valor = NULL, actualizado_en = now(), modo = 'AUTOMATICO'$$) = 1,
+    ASSERT pg_temp.filas($$UPDATE inv.actuador SET encendido = false, valor = NULL, actualizado_en = now(), modo = 'AUTOMATICO'$$) = (SELECT count(*) FROM inv.actuador),
            'AUTOMATIZACION debe actualizar actuadores';
     PERFORM pg_temp.filas($$INSERT INTO inv.prediccion_ia (nodo_id, modelo, tipo, valor)
                             VALUES ((SELECT min(id) FROM inv.nodo), 'prueba-v1', 'PRONOSTICO', 40)$$);
@@ -154,7 +154,7 @@ BEGIN
     PERFORM pg_temp.espera_error('42501', $$INSERT INTO inv.actividad (tipo, cantero, programada_en, responsable, descripcion)
                                            VALUES ('RIEGO', 'C1', now(), '{}', 'Intento de automatización')$$);
     PERFORM pg_temp.espera_error('42501', $$SELECT inv.fn_calibrar_sensor('SENS-SOIL-01', '{"a": 1}')$$);
-    ASSERT inv.fn_detener_todo('Paro automatización') = 1, 'AUTOMATIZACION debe poder hacer paro general';
+    ASSERT inv.fn_detener_todo('Paro automatización') = (SELECT count(*) FROM inv.actuador), 'AUTOMATIZACION debe poder hacer paro general';
 END $do$;
 
 -- ----------------------------- CONECTIVIDAD ----------------------------------
@@ -167,7 +167,8 @@ BEGIN
     ASSERT pg_temp.filas(format($$UPDATE inv.comando_actuador SET estado = 'CONFIRMADO',
                                   confirmado_en = '2026-11-01 13:00:00+00' WHERE id = %s$$, c)) = 1,
            'CONECTIVIDAD debe marcar CONFIRMADO';
-    ASSERT (SELECT encendido AND valor = 50 AND actualizado_en = '2026-11-01 13:00:00+00' FROM inv.actuador),
+    ASSERT (SELECT encendido AND valor = 50 AND actualizado_en = '2026-11-01 13:00:00+00'
+              FROM inv.actuador WHERE codigo = 'bomba_riego'),
            'confirmar debía actualizar el actuador (trigger SECURITY DEFINER)';
     PERFORM pg_temp.espera_error('42501', format($$UPDATE inv.comando_actuador SET motivo = 'x' WHERE id = %s$$, c));
     PERFORM pg_temp.espera_error('42501', $$INSERT INTO inv.comando_actuador (actuador_id, accion, origen)

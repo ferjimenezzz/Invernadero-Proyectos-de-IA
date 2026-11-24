@@ -195,7 +195,11 @@ PENDIENTE ──► ENVIADO ──► CONFIRMADO
 **Lo que Hardware y Conectividad deben definir y entregar (pendiente):**
 - El formato del mensaje en el topic de comandos (este repo no lo fija; un mínimo razonable es `id` del comando, `actuador` (código), `accion`, `duracion_s`, `valor`).
 - Cómo confirma el ESP32 la ejecución (topic y formato) para que Conectividad marque `CONFIRMADO`.
-- El pin de la bomba (`actuador.pin` es NULL) y si el firmware lee la calibración guardada en `sensor.calibracion`.
 - Publicar por MQTT el JSON de la sección 3 (el firmware del documento solo escribe por el puerto serie).
-- Broker, puerto, credenciales y confirmación de los topics (sección 2).
-- Recomendación (no es un requisito acordado): la regla de ejemplo `ALERTA_BOMBA_EN_SECO` apaga la bomba con el tanque al 15 % o menos y depende del flujo MQTT → BD → despachador; conviene que el firmware tenga además su propio corte local.
+- El topic de comandos. El broker, las credenciales del suscriptor y el topic de telemetría ya están confirmados (sección 2).
+
+**Acordado con Hardware (documento del 24 nov):**
+- Los actuadores van en un relevador de 2 canales y solo encienden o apagan: `bomba_riego` en GPIO 26 (IN1) y `calefactor_01`, una manta de 14 W a 127 V CA, en GPIO 27 (IN2).
+- El firmware **no lee** `sensor.calibracion`. Las constantes seco/mojado de los capacitivos van fijas en el ESP32, y lo que la app manda a calibrar queda solo como solicitud o propuesta.
+- Corte local de la bomba: con el tanque al 15 % o menos el ESP32 apaga y bloquea la bomba por su cuenta y reporta `ALERTA_BOMBA_EN_SECO` en el JSON. La regla de la base (`ALERTA_BOMBA_EN_SECO` → APAGAR) queda como respaldo.
+- Recomendación (no acordada): un corte local parecido para la manta, por ejemplo apagarla con `PELIGRO_SOBRECALENTADO` o si falla el DS18B20, porque es de 127 V CA y un APAGAR puede no llegar si se cae la red.

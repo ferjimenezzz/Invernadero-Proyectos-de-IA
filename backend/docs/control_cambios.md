@@ -2,7 +2,7 @@
 
 El modelo de datos se congeló en el hito **H2** con el esquema `bd/invernadero_bd.sql` tal como lo recibió el equipo (commit `205a7ed`, 17 tablas y 4 vistas). Este documento registra cada cambio posterior, de acuerdo con el control de cambios de la metodología (Reporte Unidad I). La lista sale de `git diff 205a7ed -- backend/bd/invernadero_bd.sql` y del archivo nuevo `backend/bd/supabase.sql`.
 
-- **Fechas de los cambios:** 17 y 22 de noviembre de 2026.
+- **Fechas de los cambios:** 17, 22, 23 y 24 de noviembre de 2026.
 - **Estado de aprobación de todos los cambios: pendiente de revisión del equipo.** Ninguno ha sido aprobado formalmente; se aplicaron para que el modelo cumpla lo que piden las apps del repositorio, Supabase y los criterios de seguridad.
 - Resultado: 18 tablas y 6 vistas. El esquema corre completo y pasa sus pruebas en un PostgreSQL 18 temporal (ver [`casos_prueba.md`](casos_prueba.md)). El 23 nov se instaló sin errores en el proyecto Supabase del equipo.
 
@@ -27,8 +27,9 @@ El modelo de datos se congeló en el hito **H2** con el esquema `bd/invernadero_
 | C-15 | Motor mínimo de PostgreSQL 14 a **15** | Vistas `security_invoker` (PostgreSQL 15) | Seguridad (las vistas deben respetar RLS de quien consulta) | Pendiente de revisión |
 | C-16 | Cabecera: el flujo describe al **suscriptor MQTT de este equipo** (no el "puente de Conectividad") y la zona horaria se resuelve con `timestamptz` y conversión al consultar (se quita la recomendación `ALTER DATABASE ... SET timezone`) | El plan asigna el suscriptor a BD y Backend (F y G); `ALTER DATABASE` puede no estar permitido en Supabase | Supabase / requisito del plan | Pendiente de revisión |
 | C-17 | Seed: `nodo.topic_telemetria` pasa de `invernadero/albahaca_01/telemetria` a **`invernadero/albahaca/invernadero_albahaca_01/telemetria`** (también en el proyecto Supabase con un `UPDATE`, y como valor por omisión del suscriptor y del simulador) | Es el topic que Conectividad configuró en su broker (23 nov) | Acuerdo con otro equipo | Pendiente de revisión |
+| C-18 | Seed del catálogo físico: DS18B20 de GPIO 5 a **GPIO 14**; TRIG del HC-SR04 de GPIO 19 a **GPIO 5** (ECHO sigue en 18), con los textos de `estado_sensor` que nombran esos pines; `bomba_riego.pin` = **GPIO 26 (IN1)**; actuador nuevo **`calefactor_01`** (CALEFACTOR, manta de 14 W a 127 V CA, GPIO 27, IN2). También en el proyecto Supabase | Documento de Hardware del 24 nov con los pines oficiales y el segundo canal del relevador | Acuerdo con otro equipo | Pendiente de revisión |
 
-Sin cambios respecto de lo congelado: tablas del catálogo y control (`cultivo`, `invernadero`, `nodo`, `tipo_sensor`, `tipo_sensor_variable`, `sensor`, `estado_sensor`, `umbral`, `medicion`, `alerta`, `regla_automatizacion`, `prediccion_ia`), `fn_historico`, `v_dataset_ia`, los triggers `pg_notify`, y los datos iniciales de sensores, estados, umbrales, actuador y reglas.
+Sin cambios respecto de lo congelado: tablas del catálogo y control (`cultivo`, `invernadero`, `nodo`, `tipo_sensor`, `tipo_sensor_variable`, `sensor`, `estado_sensor`, `umbral`, `medicion`, `alerta`, `regla_automatizacion`, `prediccion_ia`), `fn_historico`, `v_dataset_ia`, los triggers `pg_notify`, y los datos iniciales de umbrales y reglas (los de nodo, sensores, estados y actuadores cambiaron en C-17 y C-18).
 
 ## 2. Archivo nuevo: `bd/supabase.sql` (permisos, RLS y Realtime)
 
@@ -56,4 +57,4 @@ Motivo: Supabase / seguridad (las llaves y la `service_role` nunca van a un fron
 
 ## 4. Cambios del código fuera del modelo (referencia)
 
-No cambian el modelo de datos pero afectan los contratos; están en `inconsistencias.md` §6 (duración del riego manual, traducción de errores PGRST, filtros de fecha y tipos de `/audit/logs`, código principal de sensor, `PGPASSWORD` en lugar de argumentos, `engines` Node ≥ 22).
+No cambian el modelo de datos pero afectan los contratos; están en `inconsistencias.md` §6 (duración del riego manual, traducción de errores PGRST, filtros de fecha y tipos de `/audit/logs`, código principal de sensor, `PGPASSWORD` en lugar de argumentos, `engines` Node ≥ 22). Desde el 24 nov, `PUT /api/v1/sensors/calibration` guarda la calibración como propuesta (`propuesta_calibracion`) en lugar de sobrescribir `aire_crudo` y `agua_crudo`, porque Hardware decidió que el firmware no lee la base.

@@ -346,7 +346,8 @@ describe('contrato web /api/v1', () => {
     const r = await pedir('PUT', '/api/v1/sensors/calibration', { sensor_code: 'SENS-SOIL-01', raw_dry_point: 3140, raw_wet_point: 1280, offset_linear: 1.5 });
     assert.equal(r.status, 200);
     assert.equal(r.json.status, 'success');
-    assert.deepEqual(llamadas[0].slice(1), ['SENS-SOIL-01', { aire_crudo: 3140, agua_crudo: 1280, offset: 1.5 }]);
+    assert.deepEqual(llamadas[0].slice(1), ['SENS-SOIL-01',
+      { propuesta_calibracion: { aire_crudo: 3140, agua_crudo: 1280, offset: 1.5, solicitada_en: AHORA.toISOString() } }]);
     for (const [seco, mojado] of [['a', 1], [5000, 1280], [3140.5, 1280], [1280, 3140], [1280, 1280]])
       assert.equal((await pedir('PUT', '/api/v1/sensors/calibration', { sensor_code: 'SENS-SOIL-01', raw_dry_point: seco, raw_wet_point: mojado })).status, 400, `${seco}/${mojado}`);
     assert.equal((await pedir('PUT', '/api/v1/sensors/calibration', { sensor_code: 'NOPE', raw_dry_point: 3000, raw_wet_point: 1000 })).status, 404);

@@ -1147,9 +1147,9 @@ SELECT n.id, t.id, x.indice, x.nombre, x.pines, x.gpio, x.ubicacion, x.calib::js
          '{"temp_offset": 0.0, "hum_offset": 0.0}'),
         ('BH1750',          1, 'Luz (BH1750)',              'GPIO 21 (SDA), GPIO 22 (SCL)',   21, 'Sobre el cultivo',
          '{}'),
-        ('DS18B20',         1, 'Suelo profundo (DS18B20)',  'GPIO 5',                         5,  'Zona radicular',
+        ('DS18B20',         1, 'Suelo profundo (DS18B20)',  'GPIO 14',                        14, 'Zona radicular',
          '{"pullup": "4.7k", "valor_desconectado": -127}'),
-        ('HC-SR04',         1, 'Tanque de agua (HC-SR04)',  'GPIO 19 (TRIG), GPIO 18 (ECHO)', 19, 'Tanque principal',
+        ('HC-SR04',         1, 'Tanque de agua (HC-SR04)',  'GPIO 5 (TRIG), GPIO 18 (ECHO)',  5,  'Tanque principal',
          '{"tanque_vacio_cm": 40, "tanque_lleno_cm": 5}'),
         ('CAPACITIVO_V1.2', 1, 'Humedad suelo 1',           'GPIO 32',                        32, 'Zona 1',
          '{"aire_crudo": 2450, "agua_crudo": 550, "alfa_filtro": 0.15}'),
@@ -1181,13 +1181,13 @@ INSERT INTO inv.estado_sensor (codigo, categoria, descripcion, accion_sugerida) 
  ('TEMPERATURA_OPTIMA',              'NORMAL',      'Raíz entre 15 y 28 °C', NULL),
  ('ALERTA_FRIO_ACTIVAR_CALEFACCION', 'ALERTA',      'Raíz por debajo de 15 °C', 'Encender calefacción'),
  ('PELIGRO_SOBRECALENTADO',          'CRITICO',     'Raíz por encima de 28 °C', 'Ventilar y sombrear'),
- ('ERROR_DS18B20_DESCONECTADO',      'ERROR_HW',    'DS18B20 devuelve -127 °C (desconectado)', 'Revisar GPIO 5 y resistencia de 4.7 kΩ'),
- ('ERROR_DS18B20',                   'ERROR_HW',    'Falla del DS18B20', 'Revisar GPIO 5 y resistencia de 4.7 kΩ'),
+ ('ERROR_DS18B20_DESCONECTADO',      'ERROR_HW',    'DS18B20 devuelve -127 °C (desconectado)', 'Revisar GPIO 14 y resistencia de 4.7 kΩ'),
+ ('ERROR_DS18B20',                   'ERROR_HW',    'Falla del DS18B20', 'Revisar GPIO 14 y resistencia de 4.7 kΩ'),
  -- HC-SR04
  ('NIVEL_SEGURO',                    'NORMAL',      'Tanque entre 16 % y 84 %', NULL),
  ('NIVEL_MAXIMO',                    'NORMAL',      'Tanque al 85 % o más', NULL),
  ('ALERTA_BOMBA_EN_SECO',            'CRITICO',     'Tanque al 15 % o menos', 'Bloquear la bomba y rellenar el tanque'),
- ('ERROR_ULTRASONICO',               'ERROR_HW',    'Falla del HC-SR04', 'Revisar TRIG (GPIO 19) y ECHO (GPIO 18)'),
+ ('ERROR_ULTRASONICO',               'ERROR_HW',    'Falla del HC-SR04', 'Revisar TRIG (GPIO 5) y ECHO (GPIO 18)'),
  -- Capacitivos de suelo
  ('RIEGO_NECESARIO',                 'ALERTA',      'Humedad del sustrato menor a 35 %', 'Activar riego'),
  ('PELIGRO_INUNDACION',              'CRITICO',     'Humedad del sustrato mayor a 75 %', 'Detener riego'),
@@ -1208,10 +1208,13 @@ SELECT c.id, v.id, x.min_opt, x.max_opt, x.min_crit, x.max_crit, 'Firmware ESP32
   CROSS JOIN inv.cultivo c
  WHERE c.codigo = 'albahaca';
 
--- Actuador implícito en el documento (ALERTA_BOMBA_EN_SECO). El equipo de Automatización
--- agrega los suyos (ventilador, calefactor…) y pone el pin real.
+-- Actuadores confirmados por Hardware (24 nov 2026): relevador de 2 canales, solo encender/apagar.
+-- Dos INSERT para que la bomba tenga el id menor: las pruebas la toman con min(id).
 INSERT INTO inv.actuador (nodo_id, codigo, nombre, tipo, pin)
-SELECT id, 'bomba_riego', 'Bomba de riego', 'BOMBA', NULL
+SELECT id, 'bomba_riego', 'Bomba de riego', 'BOMBA', 'GPIO 26 (IN1)'
+  FROM inv.nodo WHERE codigo = 'invernadero_albahaca_01';
+INSERT INTO inv.actuador (nodo_id, codigo, nombre, tipo, pin)
+SELECT id, 'calefactor_01', 'Manta calefactora 14 W', 'CALEFACTOR', 'GPIO 27 (IN2)'
   FROM inv.nodo WHERE codigo = 'invernadero_albahaca_01';
 
 -- Reglas de ejemplo (duraciones a ajustar con pruebas reales)

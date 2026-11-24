@@ -124,7 +124,7 @@ Combina la última lectura, `fn_estadistica` y `fn_historico` de las últimas 24
 
 ### POST /dispositivos/:id/calibrar
 
-Sin body. Mezcla `{"solicitud_calibracion": "<ISO>"}` en `sensor.calibracion` mediante `fn_calibrar_sensor` (solo registra la solicitud; el firmware no la lee todavía). 204; 404 `Dispositivo no encontrado`; 403 si el rol no puede calibrar (OPERADOR, HARDWARE y ADMIN sí).
+Sin body. Mezcla `{"solicitud_calibracion": "<ISO>"}` en `sensor.calibracion` mediante `fn_calibrar_sensor` (solo registra la solicitud: el firmware no lee la calibración de la base, sus constantes van fijas en el ESP32; decisión de Hardware del 24 nov). 204; 404 `Dispositivo no encontrado`; 403 si el rol no puede calibrar (OPERADOR, HARDWARE y ADMIN sí).
 
 ### PUT /umbrales/:sensorId
 
@@ -133,7 +133,7 @@ Body: `{ "min": number, "max": number }`, números finitos con `min < max`. Adem
 
 ### GET /actuadores
 
-Solo se muestran actuadores de tipo BOMBA, ILUMINACION y VENTILADOR (en el seed solo existe `bomba_riego`). El estado combina `actuador` con el último comando válido (no FALLIDO/CANCELADO) más reciente que la última confirmación; si está PENDIENTE o ENVIADO se añade " • Esperando confirmación".
+Solo se muestran actuadores de tipo BOMBA, ILUMINACION y VENTILADOR, que son las tarjetas que tiene la app. La manta `calefactor_01` (CALEFACTOR) no aparece hasta que Aplicación agregue una tarjeta de encender/apagar; mientras tanto se maneja desde la web (`/api/v1/actuators/command`) o por PostgREST. El estado combina `actuador` con el último comando válido (no FALLIDO/CANCELADO) más reciente que la última confirmación; si está PENDIENTE o ENVIADO se añade " • Esperando confirmación".
 ```json
 { "linked": 1, "totalPower": "N/D",
   "actuators": [ { "id": "bomba_riego", "name": "Bomba de riego", "icon": "water-outline", "iconBg": "primary",
@@ -238,7 +238,7 @@ Cualquier valor sin lectura válida y vigente es `null`.
 
 ### POST /api/v1/actuators/command
 
-Body: `{ "actuator_code": string, "action": "START"|"STOP"|"SET_SPEED"|"SET_POWER", "parameters": { ... } }`. `actuator_code` es el **código real** del actuador (`bomba_riego`), no los de la maqueta (`EV_01`...).
+Body: `{ "actuator_code": string, "action": "START"|"STOP"|"SET_SPEED"|"SET_POWER", "parameters": { ... } }`. `actuator_code` es el **código real** del actuador (`bomba_riego` o `calefactor_01`), no los de la maqueta (`EV_01`...). Los dos van por relevador y solo encienden o apagan: con `SET_POWER` o `SET_SPEED` el comando se crea, pero el nivel (`valor`) no tiene efecto físico en ellos.
 
 | `action` | `parameters` | Comando generado |
 |---|---|---|
@@ -250,15 +250,16 @@ Body: `{ "actuator_code": string, "action": "START"|"STOP"|"SET_SPEED"|"SET_POWE
 `parameters.duration_minutes` (opcional, entero 1–1440) se convierte a `duracion_s` solo si el comando es ENCENDER. Motivo guardado: "Comando desde la web".
 - 201: `{ "status": "success", "timestamp": "...", "data": { "command_id": 57, "estado": "PENDIENTE" } }`
 - 400: `actuator_code y parameters inválidos` · `duration_minutes debe ser un entero entre 1 y 1440` · `power_pct debe ser un entero entre 0 y 100` · `speed debe ser OFF, Baja, Media o Alta` · `action debe ser START, STOP, SET_SPEED o SET_POWER`.
-- 404: `Actuador desconocido. Códigos válidos: bomba_riego`.
+- 404: `Actuador desconocido. Códigos válidos: bomba_riego, calefactor_01`.
 
 El comando queda `PENDIENTE`: lo despacha Conectividad (ver [`contrato_mqtt.md`](contrato_mqtt.md)).
 
 ### PUT /api/v1/sensors/calibration
 
-Body: `{ "sensor_code": string ≤40, "raw_dry_point": entero 0–4095, "raw_wet_point": entero 0–4095, "offset_linear": número (opcional, 0 por omisión) }`. El punto seco (aire) debe ser **mayor** que el mojado (agua). Se guarda en `sensor.calibracion` como `aire_crudo`, `agua_crudo` y `offset` (mezclado con lo que ya tenía).
+Body: `{ "sensor_code": string ≤40, "raw_dry_point": entero 0–4095, "raw_wet_point": entero 0–4095, "offset_linear": número (opcional, 0 por omisión) }`. El punto seco (aire) debe ser **mayor** que el mojado (agua). Se guarda como **propuesta** en `sensor.calibracion.propuesta_calibracion` (`aire_crudo`, `agua_crudo`, `offset`, `solicitada_en`) y no cambia las constantes, porque el firmware no lee la base (decisión de Hardware del 24 nov). Hardware decide si la graba en el ESP32; si lo hace, actualiza `aire_crudo` y `agua_crudo` con su cuenta (`rpc/fn_calibrar_sensor`). Devuelve la calibración completa del sensor:
 ```json
-{ "status": "success", "timestamp": "...", "data": { "aire_crudo": 3140, "agua_crudo": 1280, "offset": 1.5, "alfa_filtro": 0.15 } }
+{ "status": "success", "timestamp": "...", "data": { "aire_crudo": 2450, "agua_crudo": 550, "alfa_filtro": 0.15,
+  "propuesta_calibracion": { "aire_crudo": 3140, "agua_crudo": 1280, "offset": 1.5, "solicitada_en": "2026-11-24T18:00:00.000Z" } } }
 ```
 - 400: `sensor_code inválido` · `raw_dry_point y raw_wet_point deben ser enteros 0–4095 (ADC de 12 bits) y offset_linear un número` · `raw_dry_point (aire) debe ser mayor que raw_wet_point (agua) en el sensor capacitivo`.
 - 404 si el código no existe; 403 si el rol no puede calibrar.
@@ -298,7 +299,7 @@ Salen de `inv.fn_codigo_dispositivo(prefijo, índice)` = `SENS-<prefijo><índice
 | `SENS-TANK-01` | nivel_tanque (%) | HC-SR04 | Tanque principal |
 | `SENS-SOIL-01` … `SENS-SOIL-03` | humedad_suelo (%) | Capacitivo V1.2 | Zona 1, Zona 2, Zona 3 |
 
-Actuador: `bomba_riego` (tipo BOMBA, nodo `invernadero_albahaca_01`, pin pendiente de Hardware).
+Actuadores del nodo `invernadero_albahaca_01`, en un relevador de 2 canales (confirmados por Hardware el 24 nov): `bomba_riego` (BOMBA, GPIO 26, canal IN1) y `calefactor_01` (CALEFACTOR, manta de 14 W a 127 V CA, GPIO 27, canal IN2).
 
 Las **alertas** de un sensor de dos variables (el HC-SR04) usan un solo código "principal": el de la variable que tiene umbral (`SENS-TANK-01`) o, si ninguna, la de menor id (`inv.fn_codigo_sensor`).
 

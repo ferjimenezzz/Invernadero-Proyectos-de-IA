@@ -50,7 +50,9 @@ export function rutasWeb({ datos, ahora }) {
     if (typeof codigo !== 'string' || !codigo || codigo.length > 40) throw new ErrorApi(400, 'sensor_code inválido');
     if (!entero(seco, 0, 4095) || !entero(mojado, 0, 4095) || !num(offset)) throw new ErrorApi(400, 'raw_dry_point y raw_wet_point deben ser enteros 0–4095 (ADC de 12 bits) y offset_linear un número');
     if (seco <= mojado) throw new ErrorApi(400, 'raw_dry_point (aire) debe ser mayor que raw_wet_point (agua) en el sensor capacitivo');
-    const data = await datos.calibrar(req.ctx, codigo, { aire_crudo: seco, agua_crudo: mojado, offset });
+    // El firmware no lee la base (Hardware, 24 nov): se guarda como propuesta sin pisar las constantes reales.
+    const propuesta = { aire_crudo: seco, agua_crudo: mojado, offset, solicitada_en: ahora().toISOString() };
+    const data = await datos.calibrar(req.ctx, codigo, { propuesta_calibracion: propuesta });
     res.json(ok({ data }));
   });
 

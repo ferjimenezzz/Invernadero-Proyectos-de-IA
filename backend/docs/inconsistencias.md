@@ -19,13 +19,12 @@
 | `app web/` | ferjimenezzz (10–12 nov) | 7 páginas PHP, `assets/js/app.js`, `config/api-contracts.php` | **Maqueta total.** No hace ni una llamada de red. `api-contracts.php` no lo carga ninguna página. El login es falso: los formularios hacen GET a `dashboard.php`. |
 | `app móvil/` | jimelino (16 nov) | Expo + TypeScript, 11 pantallas, `src/services/api.ts` | UI completa. Llama a la API solo si existe `EXPO_PUBLIC_API_URL`, y aun así mucha información sigue siendo mock (§2.2). |
 | `sensores/` | ferjimenezzz | `hola, sensores` (vacío) | No hay firmware. |
-| `backend/` | equipo BD y Backend | SQL con RLS, suscriptor MQTT, adaptador Express, scripts y pruebas | Código real. El SQL pasó sus pruebas en un PostgreSQL 18 temporal y la restauración del respaldo coincide (22 nov); 38 pruebas unitarias en verde. **Nunca se ha corrido contra Supabase.** |
+| `backend/` | equipo BD y Backend | SQL con RLS, suscriptor MQTT, adaptador Express, scripts y pruebas | Código real. El SQL pasó sus pruebas en un PostgreSQL 18 temporal y la restauración del respaldo coincide (22 nov); 38 pruebas unitarias en verde. Instalado y probado en el proyecto Supabase del equipo el 23 nov. |
 
 **Lo que falta de los otros equipos:**
 - **Hardware:**
   - El firmware en el repo. El del documento solo escribe por el puerto serie, no por MQTT.
-  - El pin de la bomba.
-  - Cómo recibe el ESP32 los comandos y la calibración.
+  - Cómo recibe el ESP32 los comandos y cómo confirma que los ejecutó. Los pines, la manta calefactora, la calibración y el corte local de la bomba ya quedaron definidos (documento de Hardware del 24 nov).
 - **Conectividad:**
   - Broker, puerto y credenciales.
   - Confirmar los topics.
@@ -85,7 +84,7 @@ Bloqueantes de configuración, para cuando se conecte:
 - Para lo demás, lo más barato es que la web use las rutas de la app móvil, que viven en el mismo servidor: `/dispositivos`, `/alertas`, `/actuadores`, `/red/estado`, `/invernaderos/actual` y `/auth/login`.
 - **Los identificadores del contrato no existen en la BD.**
   - `EV_01`, `LED_PWM_03`, `FAN_M02`, `NB_01` y `SOIL_CAP_01` aparecen en el contrato.
-  - Los reales son `bomba_riego` y `SENS-SOIL-01..03`.
+  - Los reales son `bomba_riego`, `calefactor_01` y `SENS-SOIL-01..03`.
   - Hay que pasarle a Aplicación la tabla de códigos (§7).
 - **`/audit/logs` no filtra por fecha**, y el hito H5 lo pide. La telemetría agrega unas 17,280 filas al día a la bitácora y tapa los comandos y las alertas (§6).
 - **Sin ninguna fuente de datos:**
@@ -109,12 +108,12 @@ Bloqueantes de configuración, para cuando se conecte:
 | C6 | Zonas | "Zona 1" = todo el invernadero | "Zona 1/2/3" = cada sonda de suelo | `zone_id` = id del invernadero. | M |
 | C7 | Horas y unidades | "UTC-5", muestreo de 500 ms a 30 s, PAR y W/m² | America/Mexico_City (UTC-6), 5 s, lux | Lo de los documentos. | M |
 | C8 | Umbrales | Suelo mínimo 60 %, luz 15k–35k, aire 21–27 °C | Suelo 35–75, luz 2,000–15,000, aire sin definir | Manda `inv.umbral`. Con los de la maqueta, un suelo al 45 % saldría "bajo umbral", al revés que en la BD. | I |
-| C9 | Actuadores | Válvula, LED, extractor, nebulizador, cortina | Solo `bomba_riego` | No se inventan actuadores. Las tarjetas sin hardware deben decir "no instalado". | I |
+| C9 | Actuadores | Válvula, LED, extractor, nebulizador, cortina | `bomba_riego` y `calefactor_01` (manta de 14 W, confirmada por Hardware el 24 nov), ambos por relevador | No se inventan actuadores. Las tarjetas sin hardware deben decir "no instalado". La app móvil no tiene tarjeta para la manta. | I |
 | C10 | CO₂ y EC | 780 ppm y 2.3 mS/cm fijos | No hay sensores | El backend manda `null` y la app debe mostrar N/D. | M |
 | C11 | Autenticación | La web no autentica y la móvil no manda token | RLS y llaves | Ver §6.1 (decisión pendiente). | I |
 | C12 | Servidor | "Microservicio Express", `/api/v1` | "Sin Express salvo que haga falta" | Express, justificado por el repo. Se registra en control de cambios. | M |
 | C13 | URL y puerto | `192.168.1.100:3000` | PostgREST en supabase.co | Puerto 3000 y la IP de la laptop que corra el backend. | M |
-| C14 | Calibración | "Se graba en la EEPROM del ESP32" | La calibración es de Hardware | El backend solo la guarda en `sensor.calibracion`. Acordar con Hardware si el firmware la lee. | I |
+| C14 | Calibración | "Se graba en la EEPROM del ESP32" | La calibración es de Hardware | Hardware decidió (24 nov) que el firmware no la lee: las constantes van fijas en el ESP32. El backend guarda lo que manda la app como solicitud (`solicitud_calibracion`) o propuesta (`propuesta_calibracion`) sin tocar las constantes, y la app no debe decir que se grabó en el ESP32. | I |
 | C15 | Restauración | — | PostgreSQL 16 | Se restaura en el 18 instalado. Un volcado de `pg_dump` 18 puede no entrar en un 16. | M |
 | C16 | Afirmaciones falsas | "TLS 1.3 / mTLS", firma SHA-256 fija | — | Quitarlas de la web. | M |
 
@@ -173,8 +172,11 @@ Lo que sigue aplicando del plan Free: los 500 MB son solo nuestros, pero a 5 s e
    | Nivel del tanque | `SENS-TANK-01` |
    | Distancia al agua | `SENS-DIST-01` |
    | Bomba | `bomba_riego` |
+   | Manta calefactora | `calefactor_01` |
 
 9. Escapar el HTML antes de pintar datos reales.
+10. Manta calefactora: si la quieren en la app móvil, agregar una tarjeta de encender/apagar; hoy `GET /actuadores` no la incluye.
+11. Calibración: mostrar "solicitud enviada a Hardware", no "grabado en el ESP32".
 
 **Conectividad:**
 - Definir broker, credenciales y topics.
@@ -182,8 +184,7 @@ Lo que sigue aplicando del plan Free: los 500 MB son solo nuestros, pero a 5 s e
 
 **Hardware:**
 - Publicar por MQTT el JSON del documento.
-- Indicar el pin de la bomba.
-- Decidir si el firmware lee la calibración guardada en la BD.
+- Mantener `sensor.calibracion` igual a las constantes que tiene el firmware, con la cuenta `eq-hardware`. Hoy la base tiene las del documento (seco 2450, mojado 550 en los tres capacitivos).
 
 **Automatización:**
 - Definir los umbrales de aire.

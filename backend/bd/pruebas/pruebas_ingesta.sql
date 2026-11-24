@@ -230,10 +230,10 @@ SELECT set_config('request.jwt.claims',
 DO $$
 DECLARE c bigint;
 BEGIN
-    ASSERT inv.fn_detener_todo('Prueba de paro') = 1, 'fn_detener_todo debía crear 1 comando (1 actuador)';
+    ASSERT inv.fn_detener_todo('Prueba de paro') = (SELECT count(*) FROM inv.actuador), 'fn_detener_todo debía crear 1 comando por actuador';
     ASSERT (SELECT bool_and(modo = 'MANUAL') FROM inv.actuador), 'fn_detener_todo no pasó a MANUAL';
     ASSERT (SELECT count(*) FROM inv.comando_actuador c JOIN inv.usuario u ON u.id = c.usuario_id
-             WHERE c.origen = 'MANUAL' AND c.accion = 'APAGAR' AND u.nombre = 'Admin Prueba') = 1,
+             WHERE c.origen = 'MANUAL' AND c.accion = 'APAGAR' AND u.nombre = 'Admin Prueba') = (SELECT count(*) FROM inv.actuador),
            'fn_detener_todo: comando sin usuario';
 
     -- comando manual con nivel; usuario_id lo pone el DEFAULT
